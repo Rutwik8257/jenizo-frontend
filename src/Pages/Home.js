@@ -51,8 +51,8 @@ export default function Home() {
         alt="HR"
         className="leader-img"
       />
-      <h3>G. Bharath</h3>
-      <p className="role">HR Manager</p>
+      <h3>GUGULOTH BHARATH</h3>
+      <p className="role">Operations Lead</p>
       <p>Ensuring employee growth, culture, and smooth operations.</p>
     </div>
 
@@ -130,18 +130,18 @@ export default function Home() {
         <h2>What Our Clients Say</h2>
         <div className="testimonial-cards">
           <div className="testimonial-card">
-            <img 
-              src="https://randomuser.me/api/portraits/men/32.jpg" 
-              alt="John Doe" 
+            <img
+              src="https://randomuser.me/api/portraits/men/32.jpg"
+              alt="John Doe"
               className="testimonial-img"
             />
             <p>"Exceptional service and support. They transformed our business."</p>
             <h4>- John Doe, CEO</h4>
           </div>
           <div className="testimonial-card">
-            <img 
-              src="https://randomuser.me/api/portraits/women/44.jpg" 
-              alt="Jane Smith" 
+            <img
+              src="https://randomuser.me/api/portraits/women/44.jpg"
+              alt="Jane Smith"
               className="testimonial-img"
             />
             <p>"Innovative solutions and highly skilled team. Highly recommended."</p>

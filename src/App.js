@@ -1,14 +1,13 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { Link, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 
-import Home from "./Pages/Home";
 import AboutUs from "./Pages/AboutUs";
-import Services from "./Pages/Services";
 import Careers from "./Pages/Careers";
 import Contact from "./Pages/Contact";
+import Home from "./Pages/Home";
+import Services from "./Pages/Services";
 
-import Terms from "./Pages/Terms";
 import Privacy from "./Pages/Privacy";
+import Terms from "./Pages/Terms";
 
 
 import "./App.css";
@@ -27,7 +26,7 @@ function App() {
       <nav className="navbar">
         <div className="left">
           <img
-            src="/images/j.png"
+            src="images/j.png"
             alt="Jenizo Logo"
             className="logo-img"
           />
