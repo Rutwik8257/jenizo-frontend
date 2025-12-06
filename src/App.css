@@ -1,190 +1,162 @@
+:root {
+  --nav-height: 72px;
+  --primary: #007acc;
+  --deep: #002b5c;
+  --bg: #ffffff;
+  --footer-bg: #02203c;
+  --shadow: 0 6px 18px rgba(2, 24, 46, 0.06);
+  --menu-bg: rgba(255,255,255,0.98);
+  --z-nav: 1200;
+}
+
+* { box-sizing: border-box; }
 body {
-  background-color: white;   /* Light pink color */
   margin: 0;
-  padding: 0;
+  font-family: "Roboto", sans-serif;
+  background: var(--bg);
+  color: #0b1220;
 }
 
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-/* NAVBAR */
+/* NAVBAR (desktop default) */
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 40px;
-  font-size:18px;
-  background-color: white; 
-  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px 20px;
+  height: var(--nav-height);
+  background-color: var(--bg);
+  box-shadow: var(--shadow);
   position: sticky;
   top: 0;
-  z-index: 1000;
-}
-/* Search bar in navbar */
-.auth-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  z-index: var(--z-nav);
 }
 
-.navbar-search-input {
-  padding: 6px 10px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  outline: none;
-}
-
-.navbar-search-btn {
-  padding: 6px 10px;
-  border: none;
-  background-color: #007BFF;
-  color: white;
-  border-radius: 5px;
+/* LOGO */
+.logo-img {
+  width: 150px;
+  height: 56px;
+  object-fit: contain;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: transform .22s ease, opacity .22s;
 }
+.logo-img:hover { transform: translateY(-2px); }
 
-.navbar-search-btn:hover {
-  background-color: #0056b3;
-}
-
-
-.logo {
-  font-size: 20px;
-  font-weight: bold;
-}
-
+/* LINKS (desktop) */
 .nav-links {
   list-style: none;
   display: flex;
-  gap: 25px;
-  font-weight: 500;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  align-items: center;
 }
-
 .nav-links li a {
   text-decoration: none;
-  color: #000;
+  color: #0b1220;
+  font-weight: 500;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.nav-links li a:hover {
+  background: rgba(0,0,0,0.06);
 }
 
-.auth-buttons .btn {
-  margin-left: 15px;
-  padding: 8px 15px;
-  border: 1px solid #002b5c;
+/* HAMBURGER (hidden desktop) */
+.menu-toggle {
+  display: none;
   background: transparent;
+  border: none;
+  padding: 8px;
   cursor: pointer;
-  border-radius: 5px;
+  z-index: calc(var(--z-nav) + 2);
 }
-
-.login {
-  background: #002b5c;
-  color: white;
+.menu-toggle .bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #222;
+  margin: 4px 0;
+  transition: transform .24s ease, opacity .2s ease;
 }
+.menu-toggle.open .bar:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.menu-toggle.open .bar:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.menu-toggle.open .bar:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
-/* FOOTER */
 /* FOOTER */
 .main-footer {
-  background: #001f3f;
-  color: #fff;
-  padding: 20px 40px;
+  background: var(--footer-bg);
+  color: white;
+  padding: 20px 28px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-top: 40px;
+  flex-wrap: wrap;
 }
+.main-footer a { color: white !important; text-decoration: none; margin-right: 18px; }
+.social { font-size: 18px; color: white; transition: transform .18s ease; }
 
-.footer-left span {
-  margin-right: 25px;
-  font-size: 14px;
-  cursor: pointer;
-}
+/* -----------------------
+   MOBILE / TABLET FIXES
+   ----------------------- */
+@media (max-width: 768px) {
+  .menu-toggle { display: flex; align-items:center; justify-content:center; }
 
-.footer-right .social {
-  font-size: 22px;
-  margin-left: 20px;
-  cursor: pointer;
-  transition: 0.3s ease;
-}
-
-.footer-right .social:hover {
-  transform: scale(1.2);
-}
-
-* {
-  font-family: "Roboto", sans-serif;
-}
-.logo-img {
-  width: 150px;
-  height: 60px;
-  animation: fadeLogo 2s ease-in-out infinite alternate;
-  cursor: pointer;
-}
-
-
-@keyframes fadeLogo {
-  from {
-    opacity: 0.7;
-    transform: scale(0.95);
+  /* Hide desktop inline links visually but keep them available to JS toggle */
+  .nav-links {
+    position: fixed;
+    top: var(--nav-height);
+    left: 0;
+    right: 0;
+    bottom: 0; /* full height under the navbar */
+    background: var(--menu-bg);
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px;
+    gap: 12px;
+    transform: translateY(-8%); /* hidden just above viewport */
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .28s cubic-bezier(.2,.9,.2,1), opacity .22s ease;
+    border-top: 1px solid #eef2f6;
+    z-index: calc(var(--z-nav) + 1);
+    overflow-y: auto;
   }
-  to {
+
+  /* When active (mobileOpen true) slide into view */
+  .nav-links.active {
+    transform: translateY(0);
     opacity: 1;
-    transform: scale(1);
+    pointer-events: auto;
   }
-}
-.main-footer {
-  background: #02203c;
-  color: white;                /* Makes all text white */
-  padding: 20px 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+
+  .nav-links li {
+    list-style: none;
+  }
+
+  .nav-links li a {
+    display: block;
+    padding: 14px 18px;
+    font-size: 18px;
+    color: #0b1220;
+    border-radius: 8px;
+  }
+
+  .nav-links li a:hover {
+    background: rgba(0,122,204,0.06);
+    transform: translateY(-2px);
+  }
+
+  /* Make sure the hamburger sits above the menu */
+  .menu-toggle { position: relative; z-index: calc(var(--z-nav) + 2); }
+
+  /* reduce logo size */
+  .logo-img { width: 130px; height: 48px; }
 }
 
-.main-footer a {
-  color: white !important;     /* Makes Terms & Privacy links white */
-  margin-right: 20px;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.main-footer a:hover {
-  text-decoration: underline;
-}
-
-.social {
-  color: white;
-  margin-left: 15px;
-  font-size: 18px;
-  cursor: pointer;
+/* very small screens */
+@media (max-width: 420px) {
+  .nav-links li a { font-size: 16px; padding: 12px 16px; }
+  .logo-img { width: 120px; height: 44px; }
 }
