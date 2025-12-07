@@ -15,8 +15,8 @@ export default function Contact() {
   const [submitting, setSubmitting] = useState(false);
   const [serverMessage, setServerMessage] = useState("");
 
-  // API base (uses Vercel env on production, falls back to localhost in dev)
-  const API = process.env.REACT_APP_API_URL || "http://localhost:8080";
+  // prefer explicit runtime override, then env var, then localhost
+  const API = (window && window.__API_URL__) || process.env.REACT_APP_API_URL || "http://localhost:8080";
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -31,41 +31,35 @@ export default function Contact() {
     setServerMessage("");
 
     try {
-      const response = await fetch(`${API}/api/contact`, {
+      const resp = await fetch(`${API.replace(/\/$/, "")}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
-      // Try to parse JSON safely
       let data = null;
-      try {
-        data = await response.json();
-      } catch (parseErr) {
-        // ignore JSON parse errors; data stays null
-      }
+      try { data = await resp.json(); } catch (err) { /* ignore parse errors */ }
 
-      if (!response.ok) {
-        // If server returned validation errors in { errors: { field: msg } }
-        if (data && data.errors && typeof data.errors === "object") {
+      if (!resp.ok) {
+        if (data && data.errors) {
           setErrors(data.errors);
-          // show first server error message in a top-level banner
           const firstKey = Object.keys(data.errors)[0];
           setServerMessage(data.errors[firstKey]);
         } else if (data && data.error) {
           setServerMessage(data.error);
         } else {
-          setServerMessage("Failed to send message. Please check the form and try again.");
+          setServerMessage("Failed to send message. Please try again.");
         }
-        console.error("Contact API error:", response.status, data);
+        console.error("Contact API error:", resp.status, data);
         return;
       }
 
-      // Success
+      // success
       setShowPopup(true);
       setForm({ name: "", email: "", phone: "", message: "" });
       setServerMessage("Message sent successfully!");
       setTimeout(() => setShowPopup(false), 3000);
+
     } catch (err) {
       console.error("Network error:", err);
       setServerMessage("Network error. Please try again later.");
@@ -76,7 +70,6 @@ export default function Contact() {
 
   return (
     <div className="contact-page">
-      {/* CONTACT INFO */}
       <div className="contact-info">
         <div className="info-card">
           <i className="fas fa-phone-alt info-icon"></i>
@@ -115,7 +108,6 @@ export default function Contact() {
         </a>
       </div>
 
-      {/* CONTACT FORM */}
       <div className="form-section">
         <h2>Send Us a Message</h2>
 
@@ -160,7 +152,7 @@ export default function Contact() {
             onChange={handleChange}
             aria-invalid={!!errors.message}
             required
-          ></textarea>
+          />
           {errors.message && <div className="field-error">{errors.message}</div>}
 
           {serverMessage && <div className="server-message">{serverMessage}</div>}
