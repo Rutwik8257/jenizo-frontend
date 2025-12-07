@@ -1,7 +1,11 @@
 // src/Pages/StartYourProject.js
 import React from "react";
 import "./start-your-project.css";
-const TPL = `
+
+const TPL = `...`; // we'll use the same template as you had; below we reuse it programmatically
+
+// (inline template string exact content)
+const TEMPLATE = `
   <div class="start-project-wrap" id="startProjectWrap">
     <h1>Start Your Project</h1>
     <p class="intro">Share a few details — we'll review and get back within 1 business day.</p>
@@ -71,7 +75,6 @@ const TPL = `
   </div>
 `;
 
-
 function injectCss(href) {
   if (!document.querySelector(`link[href="${href}"]`)) {
     const link = document.createElement("link");
@@ -81,37 +84,15 @@ function injectCss(href) {
   }
 }
 
-
-async function fetchAndInjectScript(url) {
+async function fetchText(url) {
   try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) {
-      
-      return false;
-    }
-    const text = await res.text();
-    
-    const firstNonSpace = text.trim().slice(0, 1);
-    if (firstNonSpace === "<") {
-      
-      return false;
-    }
-    
-
-    const blob = new Blob([text], { type: "application/javascript" });
-    const blobUrl = URL.createObjectURL(blob);
-    const script = document.createElement("script");
-    script.src = blobUrl;
-    script.defer = true;
-    
-    script.onload = () => {
-      URL.revokeObjectURL(blobUrl);
-    };
-    document.body.appendChild(script);
-    return true;
-  } catch (err) {
-    
-    return false;
+    const r = await fetch(url, { cache: "no-store" });
+    if (!r.ok) return null;
+    const txt = await r.text();
+    if ((txt || "").trim().startsWith("<")) return null; // probably HTML error page
+    return txt;
+  } catch {
+    return null;
   }
 }
 
@@ -124,9 +105,7 @@ function ensurePlaceholder(container) {
     if (container && container.appendChild) container.appendChild(el);
     else document.body.appendChild(el);
   } else {
-    if (container && el.parentNode !== container) {
-      container.appendChild(el);
-    }
+    if (container && el.parentNode !== container) container.appendChild(el);
   }
   return el;
 }
@@ -137,179 +116,141 @@ function placeholderHasForm() {
   return !!(root.querySelector("#startProjectWrap") || root.querySelector("#startProjectForm"));
 }
 
+function attachHandlers(root) {
+  const form = root.querySelector("#startProjectForm");
+  if (!form) return;
+  const successBox = root.querySelector("#successBox");
+  const submitBtn = root.querySelector("#submitBtn");
+  const resetBtn = root.querySelector("#resetBtn");
 
-function attachMinimalHandlers(root) {
-  try {
-    const form = root.querySelector("#startProjectForm");
-    if (!form) return;
+  const fallbackLocal = "http://localhost:8080";
+  const apiBase = (window && window.__API_URL__) || process.env.REACT_APP_API_URL || fallbackLocal;
+  const API_ENDPOINT = apiBase.replace(/\/$/, "") + "/api/inquiries";
 
-    const successBox = root.querySelector("#successBox");
-    const submitBtn = root.querySelector("#submitBtn");
-    const resetBtn = root.querySelector("#resetBtn");
-    
-const fallbackLocal = "http://localhost:8080";
-const apiBase = (window.__API_URL__ || window.REACT_APP_API_URL || "") || fallbackLocal;
-const API_ENDPOINT = apiBase.replace(/\/$/, "") + "/api/inquiries";
-
-
-    function clearErrors() {
-      root.querySelectorAll(".field-error").forEach(n => (n.textContent = ""));
-    }
-
-    function validate() {
-      clearErrors();
-      const values = {
-        fullName: form.fullName.value.trim(),
-        email: form.email.value.trim(),
-        phone: form.phone.value.trim(),
-        projectType: form.projectType.value,
-        budget: form.budget.value,
-        description: form.description ? form.description.value.trim() : ""
-      };
-      const errors = {};
-      if (!values.fullName) errors.fullName = "Please enter your full name.";
-      if (!values.email) errors.email = "Please enter your email.";
-      else if (!/^\S+@\S+\.\S+$/.test(values.email)) errors.email = "Enter a valid email.";
-      if (!values.phone) errors.phone = "Please enter your phone number.";
-      else if (!/^[+0-9\s\-()]{7,30}$/.test(values.phone)) errors.phone = "Enter a valid phone number.";
-      if (!values.projectType) errors.projectType = "Please select a project type.";
-      if (!values.budget) errors.budget = "Please select a budget range.";
-      
-      
-
-      Object.keys(errors).forEach(k => {
-        const el = root.querySelector(`.field-error[data-for="${k}"]`);
-        if (el) el.textContent = errors[k];
-      });
-
-      return { valid: Object.keys(errors).length === 0, values };
-    }
-
-    resetBtn.addEventListener("click", () => {
-      form.reset();
-      clearErrors();
-      if (successBox) successBox.style.display = "none";
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Submit Inquiry";
-    });
-
-    form.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      if (successBox) successBox.style.display = "none";
-
-      const { valid, values } = validate();
-      if (!valid) return;
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Submitting...";
-
-      try {
-        const resp = await fetch(API_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values)
-        });
-        if (!resp.ok) {
-          let errText = "Failed to submit. Please try again.";
-          try {
-            const j = await resp.json();
-            if (j && j.errors) {
-              Object.keys(j.errors).forEach(k => {
-                const el = root.querySelector(`.field-error[data-for="${k}"]`);
-                if (el) el.textContent = j.errors[k];
-              });
-              errText = "Please correct the highlighted fields.";
-            } else if (j && j.error) errText = j.error;
-          } catch (e) {}
-          alert(errText);
-          return;
-        }
-
-        if (successBox) successBox.style.display = "block";
-        form.reset();
-        submitBtn.textContent = "Submitted";
-        setTimeout(() => {
-          submitBtn.disabled = false;
-          submitBtn.textContent = "Submit Inquiry";
-        }, 2000);
-      } catch (err) {
-        console.error("Network error:", err);
-        alert("Network error. Please try again later.");
-      } finally {
-        if (!submitBtn.disabled) submitBtn.disabled = false;
-      }
-    });
-  } catch (e) {
-    console.error("attachMinimalHandlers error", e);
+  function clearErrors() {
+    root.querySelectorAll(".field-error").forEach(n => (n.textContent = ""));
   }
-}
 
+  function validate() {
+    clearErrors();
+    const values = {
+      fullName: form.fullName.value.trim(),
+      email: form.email.value.trim(),
+      phone: form.phone.value.trim(),
+      projectType: form.projectType.value,
+      budget: form.budget.value,
+      description: form.description ? form.description.value.trim() : ""
+    };
+    const errors = {};
+    if (!values.fullName) errors.fullName = "Please enter your full name.";
+    if (!values.email) errors.email = "Please enter your email.";
+    else if (!/^\S+@\S+\.\S+$/.test(values.email)) errors.email = "Enter a valid email.";
+    if (!values.phone) errors.phone = "Please enter your phone number.";
+    else if (!/^[+0-9\s\-()]{7,30}$/.test(values.phone)) errors.phone = "Enter a valid phone number.";
+    if (!values.projectType) errors.projectType = "Please select a project type.";
+    if (!values.budget) errors.budget = "Please select a budget range.";
+    Object.keys(errors).forEach(k => {
+      const el = root.querySelector(`.field-error[data-for="${k}"]`);
+      if (el) el.textContent = errors[k];
+    });
+    return { valid: Object.keys(errors).length === 0, values };
+  }
+
+  resetBtn.addEventListener("click", () => {
+    form.reset();
+    clearErrors();
+    if (successBox) successBox.style.display = "none";
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit Inquiry";
+  });
+
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    if (successBox) successBox.style.display = "none";
+    const { valid, values } = validate();
+    if (!valid) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+
+    try {
+      const resp = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values)
+      });
+      if (!resp.ok) {
+        let errText = "Failed to submit. Please try again.";
+        try {
+          const j = await resp.json();
+          if (j && j.errors) {
+            Object.keys(j.errors).forEach(k => {
+              const el = root.querySelector(`.field-error[data-for="${k}"]`);
+              if (el) el.textContent = j.errors[k];
+            });
+            errText = "Please correct the highlighted fields.";
+          } else if (j && j.error) errText = j.error;
+        } catch (e) { /* ignore */ }
+        alert(errText);
+        return;
+      }
+
+      if (successBox) successBox.style.display = "block";
+      form.reset();
+      submitBtn.textContent = "Submitted";
+      setTimeout(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit Inquiry";
+      }, 2000);
+    } catch (err) {
+      console.error("Network error:", err);
+      alert("Network error. Please try again later.");
+    } finally {
+      if (!submitBtn.disabled) submitBtn.disabled = false;
+    }
+  });
+}
 
 export default function StartYourProject() {
   React.useEffect(() => {
-    
-    const cssCandidates = ["/startyourproject.css", "/start-your-project.css"];
-    const jsCandidates = ["/startyourproject.js", "/start-your-project.js", "/startyourproject.min.js"];
+    // try CSS candidates (harmless if 404)
+    injectCss("/startyourproject.css");
+    injectCss("/start-your-project.css");
 
-    
-    for (const c of cssCandidates) {
-      
-      injectCss(c);
-    }
-
-(async () => {
-  for (const s of jsCandidates) {
-    const ok = await fetchAndInjectScript(s);
-    if (ok) {
-      
-      await new Promise(r => setTimeout(r, 200));
-      if (placeholderHasForm()) {
-        
-        return;
+    // try to fetch an external JS that might render the form; if not, fallback
+    (async () => {
+      const jsCandidates = ["/startyourproject.js", "/start-your-project.js", "/startyourproject.min.js"];
+      for (const s of jsCandidates) {
+        const txt = await fetchText(s);
+        if (txt) {
+          // inject script blob and let it run
+          const blob = new Blob([txt], { type: "application/javascript" });
+          const blobUrl = URL.createObjectURL(blob);
+          const script = document.createElement("script");
+          script.src = blobUrl;
+          script.defer = true;
+          script.onload = () => URL.revokeObjectURL(blobUrl);
+          document.body.appendChild(script);
+          // wait briefly to allow external script to render
+          await new Promise((r) => setTimeout(r, 220));
+          if (placeholderHasForm()) return;
+        }
       }
-      
-    }
-  }
 
-  
-  if (!placeholderHasForm()) {
-    console.warn("External script not usable or didn't render the form — using fallback form.");
-    fallbackInjectAndAttach();
-  }
-})();
-
-
-
-    function fallbackInjectAndAttach() {
+      // fallback: inject template + handlers
       const container = document.getElementById("__start_project_container__");
       const root = ensurePlaceholder(container);
       if (!placeholderHasForm()) {
-        root.innerHTML = TPL;
-        attachMinimalHandlers(root);
-        
+        root.innerHTML = TEMPLATE;
+        attachHandlers(root);
         const sb = root.querySelector("#successBox");
         if (sb) sb.style.display = "none";
       }
-    }
-    
-    const obsRoot = document.getElementById("start-project-root") || document.body;
-    const observer = new MutationObserver(() => {
-      if (placeholderHasForm()) {
-        
-        
-      }
-    });
-    observer.observe(obsRoot, { childList: true, subtree: true });
-
-    return () => {
-      observer.disconnect();
-    };
+    })();
   }, []);
 
-  
   const title = React.createElement("h1", { className: "project-page-title", style: { marginBottom: 8 } }, "Start Your Project");
-const desc  = React.createElement("p",  { className: "project-page-desc",  style: { marginBottom: 22 } }, "Fill the form below and we will get back to you shortly.");
-
+  const desc = React.createElement("p", { className: "project-page-desc", style: { marginBottom: 22 } }, "Fill the form below and we will get back to you shortly.");
   const wrapper = React.createElement("div", { id: "__start_project_container__" });
 
   return React.createElement("main", { style: { padding: 24 } },
