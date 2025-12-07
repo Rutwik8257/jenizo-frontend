@@ -8,6 +8,9 @@ const helmet = require("helmet");
 const validator = require("validator");
 
 const app = express();
+
+app.set('trust proxy', process.env.TRUST_PROXY || 1);
+
 const PORT = process.env.PORT || 8080;
 
 // Middleware
