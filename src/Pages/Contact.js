@@ -29,7 +29,10 @@ export default function Contact() {
     setServerMessage("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/contact", {
+      const API = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
+const response = await fetch(`${API}/api/contact`, {
+
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
