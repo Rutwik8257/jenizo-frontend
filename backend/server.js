@@ -14,23 +14,52 @@ app.set("trust proxy", process.env.TRUST_PROXY || 1);
 
 const PORT = process.env.PORT || 8080;
 
-// Middleware
+/* ---------- Middleware ---------- */
 app.use(helmet());
 app.use(express.json({ limit: "100kb" }));
 
-// CORS
-const allowedOrigin = process.env.ALLOWED_ORIGIN || "*";
-app.use(cors({ origin: allowedOrigin }));
+// Simple request logger (helpful for debugging CORS / incoming requests)
+app.use((req, res, next) => {
+  console.log(
+    `[${new Date().toISOString()}] ${req.ip} ${req.method} ${req.url} Origin:${req.headers.origin || "-"} Content-Type:${req.headers["content-type"] || "-"}`
+  );
+  next();
+});
 
-// Rate limiter
+/* ---------- CORS (multi-origin support) ---------- */
+// ALLOWED_ORIGIN can be:
+// - "*" (allow all) OR
+// - a single origin like "https://example.com" OR
+// - a comma-separated list: "https://a.com,https://b.com,http://localhost:3000"
+const rawAllowed = (process.env.ALLOWED_ORIGIN || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const allowAny = rawAllowed.includes("*");
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (curl, server-to-server, mobile apps)
+      if (!origin) return callback(null, true);
+      if (allowAny) return callback(null, true);
+      if (rawAllowed.indexOf(origin) !== -1) return callback(null, true);
+      // not allowed
+      return callback(new Error("CORS: origin not allowed"), false);
+    },
+    optionsSuccessStatus: 200,
+  })
+);
+
+/* ---------- Rate limiter ---------- */
 const limiter = rateLimit({
-  windowMs: 60 * 1000,
+  windowMs: 60 * 1000, // 1 minute
   max: 12,
   message: { error: "Too many requests, please try again later." },
 });
 app.use("/api/", limiter);
 
-/* ------- Transporter helpers (robust) ------- */
+/* ---------- Transporter helpers (robust) ---------- */
 function createTransporterFromEnv() {
   const svc = (process.env.EMAIL_SERVICE || "").toLowerCase();
   const timeouts = {
@@ -48,7 +77,6 @@ function createTransporterFromEnv() {
     });
   }
 
-  // Generic SMTP
   if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     return nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
@@ -63,14 +91,24 @@ function createTransporterFromEnv() {
   return null;
 }
 
+// Print SMTP config debugging (non-sensitive)
+console.log("SMTP debug:", {
+  EMAIL_SERVICE: process.env.EMAIL_SERVICE || "(none)",
+  EMAIL_HOST: process.env.EMAIL_HOST || "(none)",
+  EMAIL_PORT: process.env.EMAIL_PORT || "(none)",
+  EMAIL_SECURE: process.env.EMAIL_SECURE || "(none)",
+  EMAIL_USER_PRESENT: !!process.env.EMAIL_USER,
+  USING_ETHEREAL_FALLBACK: (process.env.NODE_ENV || "development") !== "production" ? "possible" : "no",
+});
+
 let transporter = createTransporterFromEnv();
-let mailReady = false; // set true when transporter verified
+let mailReady = false;
 
 async function verifyTransporter() {
   if (!transporter) {
     console.warn("No SMTP transporter configured (missing envs).");
     mailReady = false;
-    // try dev Ethereal fallback if not production
+    // dev fallback: Ethereal (only try when not in production)
     if ((process.env.NODE_ENV || "development") !== "production") {
       try {
         const testAccount = await nodemailer.createTestAccount();
@@ -100,22 +138,17 @@ async function verifyTransporter() {
     console.warn("Mail transporter verification failed. Check env settings.", err && err.message ? err.message : err);
   }
 }
-
 verifyTransporter();
 
-/* --------- Basic routes & helpers --------- */
-
-// root friendly message
+/* ---------- Basic routes & helpers ---------- */
 app.get("/", (req, res) => {
   res.send("Jenizo backend running. Use /api endpoints.");
 });
 
-// health-check
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, env: process.env.NODE_ENV || "development", mailReady });
 });
 
-// sanitize/validate inquiry input
 function validateInput(data = {}) {
   const errors = {};
   const out = {};
@@ -138,7 +171,7 @@ function validateInput(data = {}) {
   return { valid: Object.keys(errors).length === 0, errors, out };
 }
 
-// inquiries endpoint
+/* ---------- /api/inquiries ---------- */
 app.post("/api/inquiries", async (req, res) => {
   try {
     const { valid, errors, out } = validateInput(req.body || {});
@@ -192,7 +225,6 @@ Submitted at: ${submittedAt} (Asia/Kolkata)
 
     const info = await transporter.sendMail(mailOptions);
 
-    // If Ethereal used, log preview URL
     if (nodemailer.getTestMessageUrl) {
       const preview = nodemailer.getTestMessageUrl(info);
       if (preview) console.log("Preview URL:", preview);
@@ -205,7 +237,7 @@ Submitted at: ${submittedAt} (Asia/Kolkata)
   }
 });
 
-// contact endpoint
+/* ---------- /api/contact ---------- */
 app.post("/api/contact", async (req, res) => {
   try {
     if (!mailReady) {
@@ -283,7 +315,7 @@ Submitted at: ${submittedAt}
   }
 });
 
-/* Start server */
+/* ---------- Start server ---------- */
 app.listen(PORT, () => {
   console.log(`Inquiry server listening on port ${PORT}`);
 });
