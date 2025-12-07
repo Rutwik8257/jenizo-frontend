@@ -9,6 +9,24 @@ const validator = require("validator");
 
 const app = express();
 
+// Optional: SendGrid HTTP client
+let sgMail;
+const USING_SENDGRID_API = (process.env.EMAIL_PROVIDER || "").toLowerCase() === "sendgrid";
+if (USING_SENDGRID_API) {
+  try {
+    sgMail = require("@sendgrid/mail");
+    if (process.env.SENDGRID_API_KEY) {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      console.log("SendGrid API client configured.");
+    } else {
+      console.warn("EMAIL_PROVIDER=sendgrid but SENDGRID_API_KEY is missing.");
+    }
+  } catch (e) {
+    console.warn("Failed to require @sendgrid/mail. Did you `npm install @sendgrid/mail`?", e && e.message);
+    sgMail = null;
+  }
+}
+
 // trust proxy for correct client ip detection (useful on Render)
 app.set("trust proxy", process.env.TRUST_PROXY || 1);
 
@@ -36,7 +54,7 @@ const allowAny = rawAllowed.includes("*");
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow non-browser requests
+      if (!origin) return callback(null, true); // allow non-browser requests (postman, etc)
       if (allowAny) return callback(null, true);
       if (rawAllowed.indexOf(origin) !== -1) return callback(null, true);
       return callback(new Error("CORS: origin not allowed"), false);
@@ -53,32 +71,24 @@ const limiter = rateLimit({
 });
 app.use("/api/", limiter);
 
-/* ---------- Transporter creation (SendGrid primary) ---------- */
-function createTransporterFromEnv() {
+/* ---------- Transporter (SMTP fallback) ---------- */
+function createSmtpTransporter() {
   const provider = (process.env.EMAIL_PROVIDER || "").toLowerCase();
 
-  // Common timeout options (optional)
-  const timeouts = {
-    connectionTimeout: process.env.SMTP_CONN_TIMEOUT ? Number(process.env.SMTP_CONN_TIMEOUT) : 15000,
-    greetingTimeout: process.env.SMTP_GREET_TIMEOUT ? Number(process.env.SMTP_GREET_TIMEOUT) : 10000,
-    socketTimeout: process.env.SMTP_SOCKET_TIMEOUT ? Number(process.env.SMTP_SOCKET_TIMEOUT) : 30000,
-  };
-
-  if (provider === "sendgrid") {
-    // Use nodemailer SMTP auth with SendGrid API key
-    // Note: nodemailer also supports direct HTTP transports, but SMTP with user "apikey" is simple
+  // If provider indicates sendgrid but user still wants SMTP, allow smtp.sendgrid.net with API key
+  if (provider === "sendgrid-smtp" || provider === "sendgrid") {
     if (!process.env.SENDGRID_API_KEY) return null;
     return nodemailer.createTransport({
-      service: "SendGrid",
-      auth: {
-        user: "apikey", // literal string required by SendGrid SMTP
-        pass: process.env.SENDGRID_API_KEY,
-      },
-      ...timeouts,
+      host: "smtp.sendgrid.net",
+      port: 587,
+      secure: false,
+      auth: { user: "apikey", pass: process.env.SENDGRID_API_KEY },
+      connectionTimeout: 30000,
+      greetingTimeout: 15000,
+      socketTimeout: 60000,
     });
   }
 
-  // Generic SMTP fallback (for other providers)
   if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     return nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
@@ -86,54 +96,89 @@ function createTransporterFromEnv() {
       secure: process.env.EMAIL_SECURE === "true",
       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
       requireTLS: process.env.SMTP_REQUIRE_TLS !== "false",
-      ...timeouts,
+      connectionTimeout: 30000,
+      greetingTimeout: 15000,
+      socketTimeout: 60000,
     });
   }
 
-  // Nothing configured
   return null;
 }
 
-let transporter = createTransporterFromEnv();
+let smtpTransporter = createSmtpTransporter();
 let mailReady = false;
 
-/* Verify transporter (and fallback to Ethereal in dev if none configured) */
-async function verifyTransporter() {
-  if (!transporter) {
-    console.warn("No SMTP transporter configured via env.");
-    mailReady = false;
-
-    // dev fallback: Ethereal test account
-    if ((process.env.NODE_ENV || "development") !== "production") {
-      try {
-        const testAccount = await nodemailer.createTestAccount();
-        transporter = nodemailer.createTransport({
-          host: testAccount.smtp.host,
-          port: testAccount.smtp.port,
-          secure: testAccount.smtp.secure,
-          auth: { user: testAccount.user, pass: testAccount.pass },
-        });
-        await transporter.verify();
-        mailReady = true;
-        console.log("Using Ethereal test SMTP (dev). Preview URLs via nodemailer.getTestMessageUrl(info).");
-      } catch (e) {
-        mailReady = false;
-        console.warn("Ethereal fallback failed:", e && e.message ? e.message : e);
-      }
-    }
+/* Verify transporter or SendGrid API availability; fallback to Ethereal in dev */
+async function initMail() {
+  if (USING_SENDGRID_API && sgMail && process.env.SENDGRID_API_KEY) {
+    // We consider the API ready if API key exists. We could make a lightweight test API call
+    mailReady = true;
+    console.log("Using SendGrid HTTP API for email sending.");
     return;
   }
 
-  try {
-    await transporter.verify();
-    mailReady = true;
-    console.log("Mail transporter verified and ready.");
-  } catch (err) {
-    mailReady = false;
-    console.warn("Mail transporter verification failed. Check env settings:", err && err.message ? err.message : err);
+  // Try SMTP transporter verify
+  if (smtpTransporter) {
+    try {
+      await smtpTransporter.verify();
+      mailReady = true;
+      console.log("SMTP transporter verified and ready.");
+      return;
+    } catch (err) {
+      mailReady = false;
+      console.warn("SMTP transporter verification failed.", err && err.message ? err.message : err);
+    }
   }
+
+  // Dev fallback: Ethereal
+  if ((process.env.NODE_ENV || "development") !== "production") {
+    try {
+      const testAccount = await nodemailer.createTestAccount();
+      smtpTransporter = nodemailer.createTransport({
+        host: testAccount.smtp.host,
+        port: testAccount.smtp.port,
+        secure: testAccount.smtp.secure,
+        auth: { user: testAccount.user, pass: testAccount.pass },
+      });
+      await smtpTransporter.verify();
+      mailReady = true;
+      console.log("Using Ethereal test SMTP (dev).");
+      return;
+    } catch (e) {
+      mailReady = false;
+      console.warn("Ethereal fallback failed:", e && e.message ? e.message : e);
+    }
+  }
+
+  mailReady = false;
+  console.warn("No mail transport ready. Set SENDGRID_API_KEY or SMTP envs.");
 }
-verifyTransporter();
+initMail();
+
+/* ---------- Helper: sendMail abstraction ---------- */
+async function sendMail({ from, to, subject, text, html, replyTo }) {
+  // If SendGrid HTTP API configured, use it
+  if (USING_SENDGRID_API && sgMail && process.env.SENDGRID_API_KEY) {
+    const msg = {
+      to,
+      from,
+      subject,
+      text: text || "",
+      html: html || undefined,
+      replyTo: replyTo || undefined,
+    };
+    // sgMail.send returns a promise
+    return sgMail.send(msg);
+  }
+
+  // Else try SMTP transporter if available
+  if (smtpTransporter) {
+    return smtpTransporter.sendMail({ from, to, subject, text, html, replyTo });
+  }
+
+  // No way to send
+  throw new Error("No email sending mechanism configured");
+}
 
 /* ---------- Utility: sanitize/validate inquiry input ---------- */
 function validateInput(data = {}) {
@@ -159,12 +204,10 @@ function validateInput(data = {}) {
 }
 
 /* ---------- Routes ---------- */
-app.get("/", (req, res) => {
-  res.send("Jenizo backend running. Use /api endpoints.");
-});
+app.get("/", (req, res) => res.send("Jenizo backend running. Use /api endpoints."));
 
 app.get("/api/health", (req, res) => {
-  res.json({ ok: true, env: process.env.NODE_ENV || "development", mailReady });
+  res.json({ ok: true, env: process.env.NODE_ENV || "development", mailReady, provider: process.env.EMAIL_PROVIDER || null });
 });
 
 /* POST /api/inquiries */
@@ -174,8 +217,10 @@ app.post("/api/inquiries", async (req, res) => {
     if (!valid) return res.status(400).json({ ok: false, errors });
 
     if (!mailReady) {
-      console.error("Mail transporter not ready - cannot send inquiry email.");
-      return res.status(503).json({ error: "Email service unavailable. Please try again later." });
+      // graceful fallback: log and respond 202 in case mailing is temporarily down
+      console.warn("Mail not ready; logging inquiry payload.");
+      console.log("INQUIRY PAYLOAD:", req.body);
+      return res.status(202).json({ ok: true, note: "Received (email temporarily disabled)" });
     }
 
     const submittedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
@@ -211,7 +256,7 @@ Submitted at: ${submittedAt}
 `;
 
     const mailOptions = {
-      from: process.env.SMTP_FROM || process.env.COMPANY_EMAIL || process.env.EMAIL_USER,
+      from: process.env.SMTP_FROM || process.env.COMPANY_EMAIL || process.env.EMAIL_USER || "no-reply@jenizo.in",
       to: process.env.TO_EMAIL || process.env.COMPANY_EMAIL,
       subject,
       text,
@@ -219,15 +264,17 @@ Submitted at: ${submittedAt}
       replyTo: out.email,
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await sendMail(mailOptions);
 
-    // log Ethereal preview URL in dev
+    // If using Ethereal, print preview URL (nodemailer.getTestMessageUrl)
     if (nodemailer.getTestMessageUrl) {
-      const preview = nodemailer.getTestMessageUrl(info);
-      if (preview) console.log("Preview URL:", preview);
+      try {
+        const preview = nodemailer.getTestMessageUrl(info);
+        if (preview) console.log("Preview URL:", preview);
+      } catch (e) {}
     }
 
-    return res.status(200).json({ ok: true, message: "Inquiry sent", messageId: info.messageId });
+    return res.status(200).json({ ok: true, message: "Inquiry sent", messageId: info && info.messageId ? info.messageId : undefined });
   } catch (err) {
     console.error("Error in /api/inquiries:", err && err.stack ? err.stack : err);
     return res.status(500).json({ ok: false, error: "Internal server error" });
@@ -237,11 +284,6 @@ Submitted at: ${submittedAt}
 /* POST /api/contact */
 app.post("/api/contact", async (req, res) => {
   try {
-    if (!mailReady) {
-      console.error("Mail transporter not ready - cannot send contact email.");
-      return res.status(503).json({ error: "Email service unavailable. Please try again later." });
-    }
-
     if (!process.env.COMPANY_EMAIL && !process.env.TO_EMAIL) {
       console.error("COMPANY_EMAIL/TO_EMAIL not set");
       return res.status(500).json({ error: "Server misconfiguration: missing destination email" });
@@ -263,6 +305,12 @@ app.post("/api/contact", async (req, res) => {
       phone: String(phone).trim(),
       message: String(message).trim(),
     };
+
+    if (!mailReady) {
+      console.warn("Mail not ready; logging contact payload.");
+      console.log("CONTACT PAYLOAD:", req.body);
+      return res.status(202).json({ ok: true, note: "Received (email temporarily disabled)" });
+    }
 
     const submittedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
@@ -290,7 +338,7 @@ Submitted at: ${submittedAt}
 `;
 
     const mailOptions = {
-      from: process.env.SMTP_FROM || process.env.COMPANY_EMAIL || process.env.EMAIL_USER,
+      from: process.env.SMTP_FROM || process.env.COMPANY_EMAIL || process.env.EMAIL_USER || "no-reply@jenizo.in",
       to: process.env.COMPANY_EMAIL || process.env.TO_EMAIL,
       subject: `Contact Form — ${out.name}`,
       text,
@@ -298,14 +346,17 @@ Submitted at: ${submittedAt}
       replyTo: out.email,
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const info = await sendMail(mailOptions);
+
     if (nodemailer.getTestMessageUrl) {
-      const preview = nodemailer.getTestMessageUrl(info);
-      if (preview) console.log("Preview URL:", preview);
+      try {
+        const preview = nodemailer.getTestMessageUrl(info);
+        if (preview) console.log("Preview URL:", preview);
+      } catch (e) {}
     }
 
-    console.log("Contact mail sent, messageId:", info.messageId);
-    return res.status(200).json({ ok: true, messageId: info.messageId });
+    console.log("Contact mail sent, messageId:", info && info.messageId ? info.messageId : undefined);
+    return res.status(200).json({ ok: true, messageId: info && info.messageId ? info.messageId : undefined });
   } catch (err) {
     console.error("Error in /api/contact handler:", err && err.stack ? err.stack : err);
     return res.status(500).json({ error: "Internal Server Error — check server logs" });
