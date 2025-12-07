@@ -1,25 +1,21 @@
-:root {
-  --primary: #007acc;
-  --primary-dark: #005a99;
-  --accent: #00bfa5;
-  --deep: #00274d;
-  --bg-light: #f0f4f8;
+:root{
+  --primary:#007acc;
+  --primary-dark:#005a99;
+  --accent:#00bfa5;
+  --deep:#00274d;
+  --bg-light:#f0f4f8;
   --card-shadow: 0 6px 15px rgba(0,0,0,0.12);
-  --text-dark: #222;
-  --muted: #555;
 }
 
-/* GLOBAL RESET / HELPERS */
-* { box-sizing: border-box; }
-img { max-width: 100%; display: block; }
-body { margin: 0; font-family: "Roboto", system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial; color: var(--text-dark); background: #fff; }
+*{box-sizing:border-box}
+img{max-width:100%;display:block}
 
-/* HERO SECTION */
+
 .hero {
   width: 100%;
-  min-height: 60vh; /* fluid height */
+  min-height: 60vh;
   height: auto;
-  background-image: url("https://images.pexels.com/photos/3183197/pexels-photo-3183197.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260");
+  background-image: url(https://images.pexels.com/photos/3183197/pexels-photo-3183197.jpeg?auto=compress&cs=tinysrgb&h=750&w=1260);
   background-size: cover;
   background-position: center;
   display: flex;
@@ -50,7 +46,7 @@ body { margin: 0; font-family: "Roboto", system-ui, -apple-system, "Segoe UI", "
 .hero-card p {
   font-size: clamp(14px, 1.6vw, 18px);
   margin-bottom: 20px;
-  color: var(--muted);
+  color: #333;
 }
 
 .hero-btn {
@@ -69,9 +65,27 @@ body { margin: 0; font-family: "Roboto", system-ui, -apple-system, "Segoe UI", "
   transform: translateY(-3px);
 }
 
+/* GLOBAL RESET (small helpers) */
+*{box-sizing:border-box}
+img{max-width:100%;display:block}
+
+/* HERO SECTION */
+.hero {
+  width: 100%;
+  min-height: 60vh; /* more fluid height */
+  height: auto;
+  background-image: url(https://images.pexels.com/photos/3183197/pexels-photo-3183197.jpeg?auto=compress&cs=tinysrgb&h=750&w=1260);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
 /* TRUST / LEADERSHIP SECTION */
 .trust {
-  background-color: #f7fbff;
+  background-color: #f7fbff; /* softened background for contrast */
   padding: 60px 18px;
   text-align: center;
   color: var(--deep);
@@ -117,19 +131,20 @@ body { margin: 0; font-family: "Roboto", system-ui, -apple-system, "Segoe UI", "
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 6px;
-  border: 3px solid rgba(0,0,0,0.07);
+  border: 3px solid #00000011;
 }
 
-/* FEATURES */
+
 .features {
   padding: 54px 18px;
   text-align: center;
+  background-color: #071033;
 }
 
 .features h2 {
   font-size: clamp(20px, 2.6vw, 32px);
   margin-bottom: 30px;
-  color: var(--deep);
+  color: #fdfdfd;
 }
 
 .features-container {
@@ -165,7 +180,9 @@ body { margin: 0; font-family: "Roboto", system-ui, -apple-system, "Segoe UI", "
   width: 100%;
   padding: 40px 18px;
   margin-top: 40px;
-  color: var(--text-dark);
+  background-color: #071033;
+
+  color: white;
 }
 
 .section-title {
@@ -175,12 +192,14 @@ body { margin: 0; font-family: "Roboto", system-ui, -apple-system, "Segoe UI", "
   margin-bottom: 28px;
 }
 
+/* Grid behavior: desktop two cards side-by-side; tablet stacked with two-column layout; mobile single column */
 .team-grid {
   display: flex;
   gap: 20px;
   justify-content: center;
   flex-wrap: wrap;
 }
+
 
 .team-card {
   display: flex;
@@ -196,9 +215,11 @@ body { margin: 0; font-family: "Roboto", system-ui, -apple-system, "Segoe UI", "
   gap: 18px;
 }
 
+
 .team-card.reverse {
   flex-direction: row-reverse;
 }
+
 
 .team-left {
   width: 60%;
@@ -209,14 +230,15 @@ body { margin: 0; font-family: "Roboto", system-ui, -apple-system, "Segoe UI", "
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 6px;
-  color: var(--deep);
+      color: #071033
 }
 
 .member-desc {
   font-size: 14px;
   line-height: 1.5;
-  color: var(--muted);
+  color: #555;
 }
+
 
 .team-right .team-img {
   width: 120px;
@@ -226,6 +248,7 @@ body { margin: 0; font-family: "Roboto", system-ui, -apple-system, "Segoe UI", "
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
   transition: transform 0.28s ease;
 }
+
 
 .team-card:hover {
   transform: translateY(-6px);
@@ -239,7 +262,8 @@ body { margin: 0; font-family: "Roboto", system-ui, -apple-system, "Segoe UI", "
 .testimonials {
   padding: 48px 18px;
   text-align: center;
-  color: var(--deep);
+  background-color: #071033;
+  color: #ffffff;
 }
 
 .testimonials h2 {
@@ -347,7 +371,7 @@ body { margin: 0; font-family: "Roboto", system-ui, -apple-system, "Segoe UI", "
   transform: translateY(-3px);
 }
 
-/* ANIMATIONS */
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }
