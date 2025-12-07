@@ -24,6 +24,12 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
+      <!-- dev helper: define API URL used by public scripts (remove later in production) -->
+  <script>
+    // temporary helper: set your Render backend here for quick testing
+    window.__API_URL__ = "https://jenizo-backend.onrender.com";
+  </script>
+
     <title>React App</title>
   </head>
   <body>
