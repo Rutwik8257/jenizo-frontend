@@ -12,39 +12,33 @@ const app = express();
 // trust proxy for correct client ip detection (useful on Render)
 app.set("trust proxy", process.env.TRUST_PROXY || 1);
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
 
 /* ---------- Middleware ---------- */
 app.use(helmet());
 app.use(express.json({ limit: "100kb" }));
 
-// Simple request logger (helpful for debugging CORS / incoming requests)
+// Simple request logger (helpful for debugging)
 app.use((req, res, next) => {
   console.log(
-    `[${new Date().toISOString()}] ${req.ip} ${req.method} ${req.url} Origin:${req.headers.origin || "-"} Content-Type:${req.headers["content-type"] || "-"}`
+    `[${new Date().toISOString()}] ${req.ip} ${req.method} ${req.url} Origin:${req.headers.origin || "-"}`
   );
   next();
 });
 
-/* ---------- CORS (multi-origin support) ---------- */
-// ALLOWED_ORIGIN can be:
-// - "*" (allow all) OR
-// - a single origin like "https://example.com" OR
-// - a comma-separated list: "https://a.com,https://b.com,http://localhost:3000"
+/* ---------- CORS ---------- */
+// ALLOWED_ORIGIN may be "*" or comma-separated list of origins
 const rawAllowed = (process.env.ALLOWED_ORIGIN || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 const allowAny = rawAllowed.includes("*");
-
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (curl, server-to-server, mobile apps)
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // allow non-browser requests
       if (allowAny) return callback(null, true);
       if (rawAllowed.indexOf(origin) !== -1) return callback(null, true);
-      // not allowed
       return callback(new Error("CORS: origin not allowed"), false);
     },
     optionsSuccessStatus: 200,
@@ -59,24 +53,32 @@ const limiter = rateLimit({
 });
 app.use("/api/", limiter);
 
-/* ---------- Transporter helpers (robust) ---------- */
+/* ---------- Transporter creation (SendGrid primary) ---------- */
 function createTransporterFromEnv() {
-  const svc = (process.env.EMAIL_SERVICE || "").toLowerCase();
+  const provider = (process.env.EMAIL_PROVIDER || "").toLowerCase();
+
+  // Common timeout options (optional)
   const timeouts = {
-    connectionTimeout: process.env.SMTP_CONN_TIMEOUT ? Number(process.env.SMTP_CONN_TIMEOUT) : 15_000,
-    greetingTimeout: process.env.SMTP_GREET_TIMEOUT ? Number(process.env.SMTP_GREET_TIMEOUT) : 10_000,
-    socketTimeout: process.env.SMTP_SOCKET_TIMEOUT ? Number(process.env.SMTP_SOCKET_TIMEOUT) : 30_000,
+    connectionTimeout: process.env.SMTP_CONN_TIMEOUT ? Number(process.env.SMTP_CONN_TIMEOUT) : 15000,
+    greetingTimeout: process.env.SMTP_GREET_TIMEOUT ? Number(process.env.SMTP_GREET_TIMEOUT) : 10000,
+    socketTimeout: process.env.SMTP_SOCKET_TIMEOUT ? Number(process.env.SMTP_SOCKET_TIMEOUT) : 30000,
   };
 
-  if (svc === "gmail") {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return null;
+  if (provider === "sendgrid") {
+    // Use nodemailer SMTP auth with SendGrid API key
+    // Note: nodemailer also supports direct HTTP transports, but SMTP with user "apikey" is simple
+    if (!process.env.SENDGRID_API_KEY) return null;
     return nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      service: "SendGrid",
+      auth: {
+        user: "apikey", // literal string required by SendGrid SMTP
+        pass: process.env.SENDGRID_API_KEY,
+      },
       ...timeouts,
     });
   }
 
+  // Generic SMTP fallback (for other providers)
   if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     return nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
@@ -88,27 +90,20 @@ function createTransporterFromEnv() {
     });
   }
 
+  // Nothing configured
   return null;
 }
-
-// Print SMTP config debugging (non-sensitive)
-console.log("SMTP debug:", {
-  EMAIL_SERVICE: process.env.EMAIL_SERVICE || "(none)",
-  EMAIL_HOST: process.env.EMAIL_HOST || "(none)",
-  EMAIL_PORT: process.env.EMAIL_PORT || "(none)",
-  EMAIL_SECURE: process.env.EMAIL_SECURE || "(none)",
-  EMAIL_USER_PRESENT: !!process.env.EMAIL_USER,
-  USING_ETHEREAL_FALLBACK: (process.env.NODE_ENV || "development") !== "production" ? "possible" : "no",
-});
 
 let transporter = createTransporterFromEnv();
 let mailReady = false;
 
+/* Verify transporter (and fallback to Ethereal in dev if none configured) */
 async function verifyTransporter() {
   if (!transporter) {
-    console.warn("No SMTP transporter configured (missing envs).");
+    console.warn("No SMTP transporter configured via env.");
     mailReady = false;
-    // dev fallback: Ethereal (only try when not in production)
+
+    // dev fallback: Ethereal test account
     if ((process.env.NODE_ENV || "development") !== "production") {
       try {
         const testAccount = await nodemailer.createTestAccount();
@@ -120,7 +115,7 @@ async function verifyTransporter() {
         });
         await transporter.verify();
         mailReady = true;
-        console.log("Using Ethereal test SMTP (dev). Messages available via nodemailer.getTestMessageUrl(info).");
+        console.log("Using Ethereal test SMTP (dev). Preview URLs via nodemailer.getTestMessageUrl(info).");
       } catch (e) {
         mailReady = false;
         console.warn("Ethereal fallback failed:", e && e.message ? e.message : e);
@@ -135,20 +130,12 @@ async function verifyTransporter() {
     console.log("Mail transporter verified and ready.");
   } catch (err) {
     mailReady = false;
-    console.warn("Mail transporter verification failed. Check env settings.", err && err.message ? err.message : err);
+    console.warn("Mail transporter verification failed. Check env settings:", err && err.message ? err.message : err);
   }
 }
 verifyTransporter();
 
-/* ---------- Basic routes & helpers ---------- */
-app.get("/", (req, res) => {
-  res.send("Jenizo backend running. Use /api endpoints.");
-});
-
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, env: process.env.NODE_ENV || "development", mailReady });
-});
-
+/* ---------- Utility: sanitize/validate inquiry input ---------- */
 function validateInput(data = {}) {
   const errors = {};
   const out = {};
@@ -171,7 +158,16 @@ function validateInput(data = {}) {
   return { valid: Object.keys(errors).length === 0, errors, out };
 }
 
-/* ---------- /api/inquiries ---------- */
+/* ---------- Routes ---------- */
+app.get("/", (req, res) => {
+  res.send("Jenizo backend running. Use /api endpoints.");
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, env: process.env.NODE_ENV || "development", mailReady });
+});
+
+/* POST /api/inquiries */
 app.post("/api/inquiries", async (req, res) => {
   try {
     const { valid, errors, out } = validateInput(req.body || {});
@@ -211,12 +207,12 @@ Project Type: ${out.projectType}
 Estimated Budget: ${out.budget}
 
 ${safeDescText}
-Submitted at: ${submittedAt} (Asia/Kolkata)
+Submitted at: ${submittedAt}
 `;
 
     const mailOptions = {
-      from: `"Website Inquiry" <${process.env.EMAIL_USER || process.env.SMTP_FROM || process.env.COMPANY_EMAIL}>`,
-      to: process.env.TO_EMAIL,
+      from: process.env.SMTP_FROM || process.env.COMPANY_EMAIL || process.env.EMAIL_USER,
+      to: process.env.TO_EMAIL || process.env.COMPANY_EMAIL,
       subject,
       text,
       html,
@@ -225,6 +221,7 @@ Submitted at: ${submittedAt} (Asia/Kolkata)
 
     const info = await transporter.sendMail(mailOptions);
 
+    // log Ethereal preview URL in dev
     if (nodemailer.getTestMessageUrl) {
       const preview = nodemailer.getTestMessageUrl(info);
       if (preview) console.log("Preview URL:", preview);
@@ -237,7 +234,7 @@ Submitted at: ${submittedAt} (Asia/Kolkata)
   }
 });
 
-/* ---------- /api/contact ---------- */
+/* POST /api/contact */
 app.post("/api/contact", async (req, res) => {
   try {
     if (!mailReady) {
