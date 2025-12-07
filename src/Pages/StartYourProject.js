@@ -147,7 +147,10 @@ function attachMinimalHandlers(root) {
     const submitBtn = root.querySelector("#submitBtn");
     const resetBtn = root.querySelector("#resetBtn");
     
-    const API_ENDPOINT = "http://localhost:8080/api/inquiries";
+const fallbackLocal = "http://localhost:8080";
+const apiBase = (window.__API_URL__ || window.REACT_APP_API_URL || "") || fallbackLocal;
+const API_ENDPOINT = apiBase.replace(/\/$/, "") + "/api/inquiries";
+
 
     function clearErrors() {
       root.querySelectorAll(".field-error").forEach(n => (n.textContent = ""));
