@@ -9,8 +9,13 @@ const validator = require("validator");
 
 const app = express();
 
-// Optional: SendGrid HTTP client
-let sgMail;
+// trust proxy (useful on Render and other platforms behind proxies)
+app.set("trust proxy", process.env.TRUST_PROXY || 1);
+
+const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
+
+/* ---------- SendGrid HTTP client (optional) ---------- */
+let sgMail = null;
 const USING_SENDGRID_API = (process.env.EMAIL_PROVIDER || "").toLowerCase() === "sendgrid";
 if (USING_SENDGRID_API) {
   try {
@@ -19,24 +24,20 @@ if (USING_SENDGRID_API) {
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       console.log("SendGrid API client configured.");
     } else {
-      console.warn("EMAIL_PROVIDER=sendgrid but SENDGRID_API_KEY is missing.");
+      console.warn("EMAIL_PROVIDER=sendgrid but SENDGRID_API_KEY missing.");
+      sgMail = null;
     }
   } catch (e) {
-    console.warn("Failed to require @sendgrid/mail. Did you `npm install @sendgrid/mail`?", e && e.message);
+    console.warn("Failed to require @sendgrid/mail. Did you install it?", e && e.message);
     sgMail = null;
   }
 }
-
-// trust proxy for correct client ip detection (useful on Render)
-app.set("trust proxy", process.env.TRUST_PROXY || 1);
-
-const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
 
 /* ---------- Middleware ---------- */
 app.use(helmet());
 app.use(express.json({ limit: "100kb" }));
 
-// Simple request logger (helpful for debugging)
+// Simple request logger (helpful while debugging)
 app.use((req, res, next) => {
   console.log(
     `[${new Date().toISOString()}] ${req.ip} ${req.method} ${req.url} Origin:${req.headers.origin || "-"}`
@@ -44,19 +45,34 @@ app.use((req, res, next) => {
   next();
 });
 
-/* ---------- CORS ---------- */
-// ALLOWED_ORIGIN may be "*" or comma-separated list of origins
+/* ---------- CORS setup ---------- */
+// ALLOWED_ORIGIN may be comma-separated list, or "*" to allow all
 const rawAllowed = (process.env.ALLOWED_ORIGIN || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 const allowAny = rawAllowed.includes("*");
+
+function isVercelPreview(origin) {
+  try {
+    if (!origin) return false;
+    const u = new URL(origin);
+    return /\.vercel\.app$/.test(u.hostname);
+  } catch (e) {
+    return false;
+  }
+}
+
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow non-browser requests (postman, etc)
+      // allow non-browser (curl, server-to-server) with no origin
+      if (!origin) return callback(null, true);
       if (allowAny) return callback(null, true);
       if (rawAllowed.indexOf(origin) !== -1) return callback(null, true);
+      // allow vercel preview domains automatically
+      if (isVercelPreview(origin)) return callback(null, true);
+      console.warn("CORS: origin not allowed:", origin);
       return callback(new Error("CORS: origin not allowed"), false);
     },
     optionsSuccessStatus: 200,
@@ -71,13 +87,12 @@ const limiter = rateLimit({
 });
 app.use("/api/", limiter);
 
-/* ---------- Transporter (SMTP fallback) ---------- */
-function createSmtpTransporter() {
+/* ---------- SMTP transporter creation (fallback) ---------- */
+function createSmtpTransporterFromEnv() {
   const provider = (process.env.EMAIL_PROVIDER || "").toLowerCase();
 
-  // If provider indicates sendgrid but user still wants SMTP, allow smtp.sendgrid.net with API key
-  if (provider === "sendgrid-smtp" || provider === "sendgrid") {
-    if (!process.env.SENDGRID_API_KEY) return null;
+  // Optionally allow SendGrid SMTP (using API key)
+  if ((provider === "sendgrid" || provider === "sendgrid-smtp") && process.env.SENDGRID_API_KEY) {
     return nodemailer.createTransport({
       host: "smtp.sendgrid.net",
       port: 587,
@@ -89,6 +104,7 @@ function createSmtpTransporter() {
     });
   }
 
+  // Generic SMTP from env
   if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     return nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
@@ -105,13 +121,13 @@ function createSmtpTransporter() {
   return null;
 }
 
-let smtpTransporter = createSmtpTransporter();
+let smtpTransporter = createSmtpTransporterFromEnv();
 let mailReady = false;
 
-/* Verify transporter or SendGrid API availability; fallback to Ethereal in dev */
+/* ---------- Initialize mail sending capability ---------- */
 async function initMail() {
+  // Prefer SendGrid HTTP API if configured
   if (USING_SENDGRID_API && sgMail && process.env.SENDGRID_API_KEY) {
-    // We consider the API ready if API key exists. We could make a lightweight test API call
     mailReady = true;
     console.log("Using SendGrid HTTP API for email sending.");
     return;
@@ -130,7 +146,7 @@ async function initMail() {
     }
   }
 
-  // Dev fallback: Ethereal
+  // Development fallback: Ethereal (only in non-production)
   if ((process.env.NODE_ENV || "development") !== "production") {
     try {
       const testAccount = await nodemailer.createTestAccount();
@@ -155,9 +171,9 @@ async function initMail() {
 }
 initMail();
 
-/* ---------- Helper: sendMail abstraction ---------- */
+/* ---------- sendMail abstraction ---------- */
 async function sendMail({ from, to, subject, text, html, replyTo }) {
-  // If SendGrid HTTP API configured, use it
+  // Use SendGrid HTTP API if configured
   if (USING_SENDGRID_API && sgMail && process.env.SENDGRID_API_KEY) {
     const msg = {
       to,
@@ -167,21 +183,19 @@ async function sendMail({ from, to, subject, text, html, replyTo }) {
       html: html || undefined,
       replyTo: replyTo || undefined,
     };
-    // sgMail.send returns a promise
     return sgMail.send(msg);
   }
 
-  // Else try SMTP transporter if available
+  // Else use SMTP transporter
   if (smtpTransporter) {
     return smtpTransporter.sendMail({ from, to, subject, text, html, replyTo });
   }
 
-  // No way to send
   throw new Error("No email sending mechanism configured");
 }
 
-/* ---------- Utility: sanitize/validate inquiry input ---------- */
-function validateInput(data = {}) {
+/* ---------- Helpers: validate inputs ---------- */
+function validateInquiryInput(data = {}) {
   const errors = {};
   const out = {};
 
@@ -213,11 +227,10 @@ app.get("/api/health", (req, res) => {
 /* POST /api/inquiries */
 app.post("/api/inquiries", async (req, res) => {
   try {
-    const { valid, errors, out } = validateInput(req.body || {});
+    const { valid, errors, out } = validateInquiryInput(req.body || {});
     if (!valid) return res.status(400).json({ ok: false, errors });
 
     if (!mailReady) {
-      // graceful fallback: log and respond 202 in case mailing is temporarily down
       console.warn("Mail not ready; logging inquiry payload.");
       console.log("INQUIRY PAYLOAD:", req.body);
       return res.status(202).json({ ok: true, note: "Received (email temporarily disabled)" });
@@ -266,7 +279,7 @@ Submitted at: ${submittedAt}
 
     const info = await sendMail(mailOptions);
 
-    // If using Ethereal, print preview URL (nodemailer.getTestMessageUrl)
+    // If Ethereal, log preview URL
     if (nodemailer.getTestMessageUrl) {
       try {
         const preview = nodemailer.getTestMessageUrl(info);
