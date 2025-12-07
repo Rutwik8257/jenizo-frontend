@@ -18,7 +18,9 @@ export default function AboutUs() {
     e.preventDefault();
 
     
-    const apiUrl = "http://localhost:8080/api/inquiries";
+    const API = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const apiUrl = `${API}/api/inquiries`;
+
 
 
     console.log("Submitting to:", apiUrl);
