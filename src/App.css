@@ -1,8 +1,19 @@
 :root {
+  --nav-height: 110px;
+  --primary: #007acc;
+  --deep: #002b5c;
+  --bg: #071033;
+  --footer-bg: #032647;
+  --shadow: 0 6px 18px rgba(2, 24, 46, 0.06);
+  --menu-bg: rgba(255,255,255,0.98);
+  --z-nav: 1200;
+}
+
+:root {
   --nav-height: 72px;
   --primary: #007acc;
   --deep: #002b5c;
-  --bg: #ffffff;
+  --bg: #071033;
   --footer-bg: #02203c;
   --shadow: 0 6px 18px rgba(2, 24, 46, 0.06);
   --menu-bg: rgba(255,255,255,0.98);
@@ -10,7 +21,6 @@
 }
 
 * { box-sizing: border-box; }
-
 body {
   margin: 0;
   font-family: "Roboto", sans-serif;
@@ -25,17 +35,18 @@ body {
   align-items: center;
   padding: 12px 20px;
   height: var(--nav-height);
-  background-color: var(--bg);
+  background-color: #071033;
   box-shadow: var(--shadow);
   position: sticky;
   top: 0;
   z-index: var(--z-nav);
 }
 
+
 /* LOGO */
 .logo-img {
   width: 150px;
-  height: 56px;
+  height: 90px;
   object-fit: contain;
   cursor: pointer;
   transition: transform .22s ease, opacity .22s;
@@ -53,7 +64,26 @@ body {
 }
 .nav-links li a {
   text-decoration: none;
-  color: #0b1220;
+  color: #fefefe;
+  font-weight: 500;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.nav-links li a:hover {
+  background: rgba(0,0,0,0.06);
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+.nav-links li a {
+  text-decoration: none;
+  color: #f7f7f7;
   font-weight: 500;
   padding: 8px 10px;
   border-radius: 6px;
@@ -98,10 +128,9 @@ body {
 .main-footer a { color: white !important; text-decoration: none; margin-right: 18px; }
 .social { font-size: 18px; color: white; transition: transform .18s ease; }
 
-/* -----------------------
-   MOBILE / TABLET FIXES
-   ----------------------- */
 @media (max-width: 768px) {
+  .menu-toggle { display: flex; align-items:center; justify-content:center; }
+
   .menu-toggle { display: flex; align-items:center; justify-content:center; }
 
   /* Hide desktop inline links visually but keep them available to JS toggle */
@@ -110,12 +139,14 @@ body {
     top: var(--nav-height);
     left: 0;
     right: 0;
+    bottom: 0;
     bottom: 0; /* full height under the navbar */
     background: var(--menu-bg);
     flex-direction: column;
     align-items: stretch;
     padding: 20px;
     gap: 12px;
+    transform: translateY(-8%);
     transform: translateY(-8%); /* hidden just above viewport */
     opacity: 0;
     pointer-events: none;
@@ -125,7 +156,6 @@ body {
     overflow-y: auto;
   }
 
-  /* When active (mobileOpen true) slide into view */
   .nav-links.active {
     transform: translateY(0);
     opacity: 1;
@@ -149,6 +179,12 @@ body {
     transform: translateY(-2px);
   }
 
+  .menu-toggle { position: relative; z-index: calc(var(--z-nav) + 2); }
+
+  .menu-toggle { position: relative; z-index: calc(var(--z-nav) + 2); }
+
+  .logo-img { width: 120px; height: 100px; }
+
   /* Make sure the hamburger sits above the menu */
   .menu-toggle { position: relative; z-index: calc(var(--z-nav) + 2); }
 
@@ -156,8 +192,9 @@ body {
   .logo-img { width: 130px; height: 48px; }
 }
 
-/* very small screens */
 @media (max-width: 420px) {
+  .nav-links li a { font-size: 16px; padding: 12px 16px; }
+  .logo-img { width: 120px; height: 150px; }
   .nav-links li a { font-size: 16px; padding: 12px 16px; }
   .logo-img { width: 120px; height: 44px; }
 }
