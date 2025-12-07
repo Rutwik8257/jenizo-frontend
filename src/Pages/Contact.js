@@ -29,47 +29,46 @@ export default function Contact() {
     setServerMessage("");
 
     try {
-      const API = process.env.REACT_APP_API_URL || "http://localhost:8080";
+      // add near top:
+const API = process.env.REACT_APP_API_URL || "http://localhost:8080";
 
-const response = await fetch(`${API}/api/contact`, {
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+  try {
+    const response = await fetch(`${API}/api/contact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
 
-      const payload = await response.json().catch(() => ({}));
+    // Try to read JSON (server returns { errors } on 400)
+    const data = await response.json().catch(() => null);
 
-      if (!response.ok) {
-        
-        if (payload && payload.errors) {
-          setErrors(payload.errors);
-          setServerMessage(payload.message || "Please correct the highlighted fields.");
-        } else if (payload && payload.error) {
-          
-          setServerMessage(payload.error);
-        } else {
-          setServerMessage("Failed to submit. Please try again later.");
-        }
-        setSubmitting(false);
-        return;
+    if (!response.ok) {
+      console.error("Server responded:", response.status, data);
+      if (data && data.errors) {
+        // display the first server validation message
+        const firstKey = Object.keys(data.errors)[0];
+        alert(data.errors[firstKey]);
+      } else if (data && data.error) {
+        alert(data.error);
+      } else {
+        alert("Failed to send message. Please check the form and try again.");
       }
-
-      
-      setShowPopup(true);
-      setForm({ name: "", email: "", phone: "", message: "" });
-      setErrors({});
-      setServerMessage("");
-
-      
-      setTimeout(() => setShowPopup(false), 3000);
-    } catch (err) {
-      console.error("Network error:", err);
-      setServerMessage("Network error. Please check your connection or try again later.");
-    } finally {
-      setSubmitting(false);
+      return;
     }
-  };
+
+    // success
+    setShowPopup(true);
+    setForm({ name: "", email: "", phone: "", message: "" });
+    setTimeout(() => setShowPopup(false), 3000);
+
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("Network error. Please try again later.");
+  }
+};
 
   return (
     <div className="contact-page">
