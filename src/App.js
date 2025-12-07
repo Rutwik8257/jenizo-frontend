@@ -1,21 +1,29 @@
+// src/App.js
+import { useState } from "react";
 import { Link, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 
 import AboutUs from "./Pages/AboutUs";
 import Careers from "./Pages/Careers";
 import Contact from "./Pages/Contact";
 import Home from "./Pages/Home";
+import ServiceDetail from "./Pages/ServiceDetail";
 import Services from "./Pages/Services";
 
 import Privacy from "./Pages/Privacy";
 import Terms from "./Pages/Terms";
 
+import StartYourProject from "./Pages/StartYourProject"; // <-- new
 
 import "./App.css";
 
 function App() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const toggleMobile = () => setMobileOpen(prev => !prev);
+  const closeMobile = () => setMobileOpen(false);
+
   return (
     <Router>
-
       {/* FONT AWESOME ICONS */}
       <link
         rel="stylesheet"
@@ -24,21 +32,34 @@ function App() {
 
       {/* NAVBAR */}
       <nav className="navbar">
-        <div className="left">
-          <img
-            src="images/j.png"
-            alt="Jenizo Logo"
-            className="logo-img"
-          />
+        <div className="nav-left">
+          <Link to="/" onClick={closeMobile} className="brand">
+            <img src="images/logo-2.png" alt="Jenizo Logo" className="logo-img" />
+          </Link>
         </div>
 
-        <ul className="nav-links">
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/about">About Us</Link></li>
-          <li><Link to="/services">Services</Link></li>
-          <li><Link to="/careers">Careers</Link></li>
-          <li><Link to="/contact">Contact</Link></li>
-         
+        {/* HAMBURGER MENU */}
+        <button
+          className={`menu-toggle ${mobileOpen ? "open" : ""}`}
+          onClick={toggleMobile}
+          aria-expanded={mobileOpen}
+          aria-label="Toggle navigation"
+        >
+          <span className="bar" />
+          <span className="bar" />
+          <span className="bar" />
+        </button>
+
+        {/* LINKS */}
+        <ul className={`nav-links ${mobileOpen ? "active" : ""}`}>
+          <li><Link to="/" onClick={closeMobile}>Home</Link></li>
+          <li><Link to="/about" onClick={closeMobile}>About Us</Link></li>
+          <li><Link to="/services" onClick={closeMobile}>Services</Link></li>
+          <li><Link to="/careers" onClick={closeMobile}>Careers</Link></li>
+          <li><Link to="/contact" onClick={closeMobile}>Contact</Link></li>
+
+          {/* SPA route link for Start Your Project */}
+          <li><Link to="/start-your-project" onClick={closeMobile}>Start Your Project</Link></li>
         </ul>
       </nav>
 
@@ -49,9 +70,12 @@ function App() {
         <Route path="/services" element={<Services />} />
         <Route path="/careers" element={<Careers />} />
         <Route path="/contact" element={<Contact />} />
-        
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/services/:slug" element={<ServiceDetail />} />
+
+        {/* Start Your Project route */}
+        <Route path="/start-your-project" element={<StartYourProject />} />
       </Routes>
 
       {/* FOOTER */}
@@ -68,7 +92,6 @@ function App() {
           <i className="fab fa-facebook social"></i>
         </div>
       </footer>
-
     </Router>
   );
 }

@@ -1,73 +1,65 @@
-import React from "react";
+// src/Pages/Services.js
+import { Link } from "react-router-dom";
 import "./Services.css";
+
+const services = [
+  {
+    slug: "mobile-app-development",
+    title: "Mobile App Development",
+    short: "We create fast, user-friendly mobile apps for Android and iOS.",
+    img: "/images/appdev.jpeg",
+  },
+  {
+    slug: "website-development",
+    title: "Website Development",
+    short: "We build modern, responsive, and SEO-friendly websites.",
+    img: "/images/webdev.jpeg",
+  },
+  {
+    slug: "ui-ux-design",
+    title: "UI/UX Designing",
+    short: "We design clean, intuitive interfaces for a better user experience.",
+    img: "/images/uidev.jpeg",
+  },
+  {
+    slug: "ui-automation",
+    title: "UI Automation",
+    short: "We automate UI testing to ensure smooth and error-free performance.",
+    img: "/images/uiautomation.jpeg",
+  },
+  {
+    slug: "digital-marketing",
+    title: "Digital Marketing",
+    short: "We help businesses grow online with targeted digital strategies.",
+    img: "/images/digitalmarketing.jpeg",
+  },
+  {
+    slug: "ecommerce-development",
+    title: "E-Commerce Development",
+    short: "We craft strong, memorable visual identities for brands.",
+    img: "/images/ecommerce.jpeg",
+  },
+];
 
 export default function Services() {
   return (
     <div className="services-page">
-
-      {/* <h1 className="services-title">Our Services</h1> */}
+      <h1 className="services-title">Our Services</h1>
 
       <div className="services-grid">
+        {services.map((s) => (
+          <div className="service-card" key={s.slug}>
+            <img src={s.img} alt={s.title} />
+            <h3>{s.title}</h3>
+            <p>{s.short}</p>
 
-       
-        <div className="service-card">
-          <img src="/images/appdev.jpeg" alt="Mobile App Development" />
-
-
-          <h3>Mobile App Development</h3>
-          <p>We create fast, user-friendly mobile apps for Android and iOS.</p>
-        </div>
-
-        {/* --- Website Development --- */}
-        <div className="service-card">
-          <img
-            src="/images/webdev.jpeg"
-            alt="Website Development"
-          />
-          <h3>Website Development</h3>
-          <p>We build modern, responsive, and SEO-friendly websites.</p>
-        </div>
-
-        {/* --- UI/UX Designing --- */}
-        <div className="service-card">
-          <img
-            src="/images/uidev.jpeg"
-            alt="UI/UX Designing"
-          />
-          <h3>UI/UX Designing</h3>
-          <p>We design clean, intuitive interfaces for a better user experience.</p>
-        </div>
-
-        {/* --- UI Automation --- */}
-        <div className="service-card">
-          <img
-            src="/images/uiautomation.jpeg"
-            alt="UI Automation"
-          />
-          <h3>UI Automation</h3>
-          <p>We automate UI testing to ensure smooth and error-free performance.</p>
-        </div>
-
-        {/* --- Digital Marketing --- */}
-        <div className="service-card">
-          <img
-            src="/images/digitalmarketing.jpeg"
-            alt="Digital Marketing"
-          />
-          <h3>Digital Marketing</h3>
-          <p>We help businesses grow online with targeted digital strategies.</p>
-        </div>
-
-        {/* --- E-Commerce Development --- */}
-        <div className="service-card">
-          <img
-            src="/images/ecommerce.jpeg"
-            alt="E-Commerce Development"
-          />
-          <h3>E-Commerce Development</h3>
-          <p>We craft strong, memorable visual identities for brands.</p>
-        </div>
-
+            <div className="card-actions">
+              <Link to={`/services/${s.slug}`} className="view-more-btn">
+                View more
+              </Link>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

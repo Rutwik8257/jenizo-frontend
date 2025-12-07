@@ -1,76 +1,90 @@
+
+
 .about-container {
   width: 100%;
   padding: 40px 20px;
-  text-align: center;
+  background: #071033;
+  color: #ffffff;
 }
 
-/* ─────────────────────────────── */
-/* MISSION VISION VALUES */
-/* ─────────────────────────────── */
 
 .mv-section-new {
   display: flex;
   justify-content: center;
-  gap: 60px;
-  margin-bottom: 60px;
+  gap: 40px;
   flex-wrap: wrap;
+  padding: 40px 20px;
+  
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  margin-bottom: 50px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 .mv-box {
-  width: 300px;
+  width: 290px;
   text-align: center;
 }
 
 .mv-icon-new {
-  width: 320px;
-  height: 200px;
+  width: 290px;
+  height: 180px;
+  border-radius: 10px;
   margin-bottom: 15px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
 }
 
 .mv-box h3 {
   font-size: 22px;
-  color: #032b55;
   font-weight: 700;
+  color: #00eaff;
   margin-bottom: 10px;
 }
 
 .mv-box p {
   font-size: 15px;
-  color: #333;
   line-height: 1.6;
+  color: #d6e6ff;
 }
 
-/* ─────────────────────────────── */
-/* WHY DIFFERENT SECTION */
-/* ─────────────────────────────── */
+
 
 .different-section {
   width: 85%;
-  margin: auto;
+  margin: 50px auto;
+  padding: 25px 30px;
+  
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+
   text-align: left;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
 }
 
 .different-section h2 {
   text-align: center;
   font-size: 26px;
   font-weight: 700;
-  color: #032b55;
+  color: #00eaff;
   margin-bottom: 20px;
 }
 
 .different-section p {
   font-size: 15px;
   line-height: 1.7;
-  color: #333;
   margin-bottom: 15px;
+  color: #e4efff;
 }
 
-/* ─────────────────────────────── */
-/* ⭐ WHAT WE DO */
-/* ─────────────────────────────── */
+
 
 .services-mini {
-  margin: 70px auto;
+  padding: 40px 20px;
+  margin: 60px auto;
+
+  background: rgba(255,255,255,0.05);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
 }
 
 .service-icons {
@@ -83,31 +97,36 @@
 
 .service-item {
   width: 180px;
-  padding: 15px;
   text-align: center;
 }
 
 .service-item img {
-  width: 200px;
+  width: 180px;
+  border-radius: 10px;
   margin-bottom: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
 }
 
 .service-item h3 {
   font-size: 18px;
-  color: #032b55;
+  color: #00eaff;
   font-weight: 700;
 }
 
-/* ─────────────────────────────── */
-/* ⭐ COMPANY ACHIEVEMENTS */
-/* ─────────────────────────────── */
+
 
 .stats-section {
   display: flex;
   justify-content: center;
   gap: 60px;
   flex-wrap: wrap;
+
   margin: 60px 0;
+  padding: 30px 20px;
+
+  background: rgba(255,255,255,0.05);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
 }
 
 .stat-box {
@@ -116,137 +135,147 @@
 
 .stat-box h3 {
   font-size: 36px;
-  color: #032b55;
   font-weight: 800;
+  color: #00eaff;
 }
 
 .stat-box p {
   font-size: 16px;
-  color: #444;
+  color: #d6e6ff;
 }
 
-/* ─────────────────────────────── */
-/* PROJECT FORM */
-/* ─────────────────────────────── */
+
 
 .project-section {
   width: 90%;
   margin: 50px auto;
   padding: 35px;
-  border-radius: 12px;
-  box-shadow: 0px 4px 10px rgba(0,0,0,0.08);
+
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+
+  box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+  text-align: center;
 }
 
 .project-section h2 {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
-  color: #032b55;
+  color: #00eaff;
   margin-bottom: 25px;
 }
+
+.project-section p {
+  color: #dce8ff;
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+
 
 .project-form {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  max-width: 600px;
+  max-width: 650px;
   margin: auto;
 }
 
 .project-form input,
-.project-form textarea {
+.project-form textarea,
+.project-form select {
   padding: 12px;
-  font-size: 15px;
-  border: 1px solid #ccc;
   border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.project-form input::placeholder,
+.project-form textarea::placeholder {
+  color: #c9dfff;
 }
 
 .project-form input:focus,
 .project-form textarea:focus {
-  border-color: #032b55;
-  box-shadow: 0px 0px 5px rgba(3,43,85,0.3);
+  border-color: #00eaff;
+  box-shadow: 0 0 8px rgba(0,238,255,0.5);
 }
+
 
 .submit-btn {
   padding: 12px;
-  background: #032b55;
-  color: white;
+  background: linear-gradient(90deg, #00eaff, #007fa6);
+  color: #071033;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  font-weight: 700;
 }
 
 .submit-btn:hover {
-  background: #054b8e;
+  background: linear-gradient(90deg, #1ff5ff, #0094c2);
+  transform: translateY(-2px);
 }
+
 
 .call-btn {
   margin-top: 10px;
   display: inline-block;
-  padding: 12px;
+  padding: 12px 20px;
+  
   background: #28a745;
   color: white;
   border-radius: 8px;
   text-decoration: none;
+  font-weight: 600;
 }
 
 .call-btn:hover {
   background: #1e7e34;
 }
 
-/* RESPONSIVE */
-@media (max-width: 768px) {
 
-  .mv-section-new {
-    flex-direction: column;
-    gap: 40px;
-  }
-
-  .service-icons {
-    gap: 25px;
-  }
-
-  .stats-section {
-    gap: 30px;
-  }
-
-  .project-section {
-    padding: 20px;
-  }
+.field-error {
+  color: #ffb3b3;
+  font-size: 13px;
+  text-align: left;
 }
-/* Overlay background */
+
+
+
 .popup-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
+  inset: 0;
+  background: rgba(0,0,0,0.55);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2000;
 }
 
-/* Popup box */
 .popup-box {
-  background: #fff;
+  background: #ffffff;
+  color: #071033;
   padding: 25px 30px;
   border-radius: 12px;
   text-align: center;
   width: 320px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  animation: pop 0.3s ease-in-out;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  animation: pop 0.3s ease-out;
 }
 
 @keyframes pop {
-  0% { transform: scale(0.7); opacity: 0; }
+  0% { transform: scale(0.75); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
 
 .popup-btn {
   margin-top: 15px;
   padding: 10px 20px;
-  background: #007bff;
+  background: #032b55;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -254,5 +283,26 @@
 }
 
 .popup-btn:hover {
-  background: #0056b3;
+  background: #054b8e;
+}
+
+
+
+@media (max-width: 768px) {
+  .mv-section-new {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .services-mini {
+    padding: 20px;
+  }
+
+  .stats-section {
+    gap: 30px;
+  }
+
+  .project-section {
+    padding: 25px;
+  }
 }

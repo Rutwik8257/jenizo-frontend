@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./Contact.css";
 
 export default function Contact() {
@@ -9,51 +9,67 @@ export default function Contact() {
     message: "",
   });
 
+  
+  const [errors, setErrors] = useState({});
   const [showPopup, setShowPopup] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [serverMessage, setServerMessage] = useState("");
 
-  // Handle input changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    
+    setErrors(prev => ({ ...prev, [e.target.name]: undefined }));
+    setServerMessage("");
   };
 
-  // Handle form submit WITHOUT BACKEND
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
+    setErrors({});
+    setServerMessage("");
 
-    // Show success popup
-    setShowPopup(true);
+    try {
+      const response = await fetch("http://localhost:8080/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-    // Clear form
-    setForm({
-      name: "",
-      email: "",
-      phone: "",
-      message: "",
-    });
+      const payload = await response.json().catch(() => ({}));
 
-    // Auto hide popup after 3 seconds
-    setTimeout(() => setShowPopup(false), 3000);
+      if (!response.ok) {
+        
+        if (payload && payload.errors) {
+          setErrors(payload.errors);
+          setServerMessage(payload.message || "Please correct the highlighted fields.");
+        } else if (payload && payload.error) {
+          
+          setServerMessage(payload.error);
+        } else {
+          setServerMessage("Failed to submit. Please try again later.");
+        }
+        setSubmitting(false);
+        return;
+      }
+
+      
+      setShowPopup(true);
+      setForm({ name: "", email: "", phone: "", message: "" });
+      setErrors({});
+      setServerMessage("");
+
+      
+      setTimeout(() => setShowPopup(false), 3000);
+    } catch (err) {
+      console.error("Network error:", err);
+      setServerMessage("Network error. Please check your connection or try again later.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="contact-container">
-      <h1 className="contact-title">Contact Us</h1>
-      <p className="contact-subtitle">
-        We're here to help! Reach out to us using any of the methods below.
-      </p>
-
-      {/* POPUP MODAL */}
-      {showPopup && (
-        <div className="popup-overlay">
-          <div className="popup-box">
-            <h3>Message sent successfully!</h3>
-            <button className="popup-btn" onClick={() => setShowPopup(false)}>
-              OK
-            </button>
-          </div>
-        </div>
-      )}
-
+    <div className="contact-page">
       {/* CONTACT INFO */}
       <div className="contact-info">
         <div className="info-card">
@@ -97,15 +113,17 @@ export default function Contact() {
       <div className="form-section">
         <h2>Send Us a Message</h2>
 
-        <form className="contact-form" onSubmit={handleSubmit}>
+        <form className="contact-form" onSubmit={handleSubmit} noValidate>
           <input
             type="text"
             name="name"
             placeholder="Your Name"
             value={form.name}
             onChange={handleChange}
+            aria-invalid={!!errors.name}
             required
           />
+          {errors.name && <div className="field-error">{errors.name}</div>}
 
           <input
             type="email"
@@ -113,8 +131,10 @@ export default function Contact() {
             placeholder="Your Email"
             value={form.email}
             onChange={handleChange}
+            aria-invalid={!!errors.email}
             required
           />
+          {errors.email && <div className="field-error">{errors.email}</div>}
 
           <input
             type="text"
@@ -122,23 +142,30 @@ export default function Contact() {
             placeholder="Phone Number"
             value={form.phone}
             onChange={handleChange}
+            aria-invalid={!!errors.phone}
             required
           />
+          {errors.phone && <div className="field-error">{errors.phone}</div>}
 
           <textarea
             name="message"
             placeholder="Your Message"
             value={form.message}
             onChange={handleChange}
+            aria-invalid={!!errors.message}
             required
           ></textarea>
+          {errors.message && <div className="field-error">{errors.message}</div>}
 
-          <button type="submit" className="submit-btn">
-            Submit
+          {serverMessage && <div className="server-message">{serverMessage}</div>}
+
+          <button type="submit" className="submit-btn" disabled={submitting}>
+            {submitting ? "Sending..." : "Submit"}
           </button>
         </form>
+
+        {showPopup && <div className="popup-message">Message sent successfully!</div>}
       </div>
     </div>
   );
 }
-

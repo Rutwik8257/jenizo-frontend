@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./AboutUs.css";
 
 export default function AboutUs() {
@@ -17,8 +17,8 @@ export default function AboutUs() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Clean URL, no spaces or newline
-    const apiUrl = "http://localhost:8080/api/inquiries"; // ✅ Correct
+    
+    const apiUrl = "http://localhost:8080/api/inquiries";
 
 
     console.log("Submitting to:", apiUrl);
@@ -55,7 +55,7 @@ export default function AboutUs() {
 
   return (
     <div className="about-container">
-      {/* MISSION VISION VALUES */}
+      
       <div className="mv-section-new">
         <div className="mv-box">
           <img src="/images/mission.jpeg" alt="mission" className="mv-icon-new" />
@@ -90,7 +90,7 @@ export default function AboutUs() {
         </p>
       </div>
 
-      {/* WHAT WE DO SECTION */}
+
       <section className="services-mini">
         <h2 className="section-title">What We Do</h2>
         <div className="service-icons">
@@ -123,7 +123,6 @@ export default function AboutUs() {
         </div>
       </section>
 
-      {/* PROJECT INQUIRY FORM */}
       <div className="project-section">
         <h2>Connect with Us</h2>
 

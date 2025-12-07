@@ -1,0 +1,215 @@
+/* startyourproject.css
+   Matching styles for startyourproject.js
+   Drop this file into your frontend and link it in the page head.
+*/
+
+/* Container */
+.start-project-wrap {
+  max-width: 760px;
+  margin: 60px auto;
+  padding: 36px;
+  border-radius: 12px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #3466b7 0%, #003466 50%, #005E89 100%);
+  box-shadow: 0 12px 40px rgba(2, 24, 46, 0.35);
+  font-family: Inter, "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
+  -webkit-font-smoothing: antialiased;
+}
+
+
+/* React page title + subtitle styling */
+.project-page-title {
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 32px;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.project-page-desc {
+  color: rgba(255,255,255,0.92) !important;
+  font-size: 15px;
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+
+
+
+.start-project-wrap h1 {
+  text-align: center;
+  font-size: 30px;
+  margin: 0 0 10px;
+  letter-spacing: 0.2px;
+  color: #e8f6ff;
+}
+
+
+.start-project-wrap p.intro {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0 0 20px;
+  font-size: 14px;
+}
+
+
+.talk-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+
+.talk-form .full-row {
+  grid-column: 1 / -1;
+}
+
+
+.talk-form label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #dfefff;
+}
+
+
+.talk-form input[type="text"],
+.talk-form input[type="email"],
+.talk-form select,
+.talk-form textarea {
+  width: 100%;
+  padding: 11px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.04);
+  color: #000000;
+  outline: none;
+  box-sizing: border-box;
+  transition: box-shadow .12s ease, transform .08s ease, border-color .12s ease;
+}
+
+
+.talk-form input::placeholder,
+.talk-form textarea::placeholder {
+  color: rgba(255,255,255,0.65);
+}
+
+
+.talk-form input:focus,
+.talk-form select:focus,
+.talk-form textarea:focus {
+  box-shadow: 0 6px 20px rgba(0, 194, 255, 0.08);
+  border-color: rgba(0,194,255,0.55);
+  transform: translateY(-1px);
+}
+
+
+.talk-form small.note {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(192, 230, 255, 0.9);
+}
+
+
+.field-error {
+  color: #ffd2d2;
+  font-size: 12px;
+  margin-top: 6px;
+  min-height: 16px;
+}
+
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 14px;
+  justify-content: flex-end;
+  grid-column: 1 / -1;
+}
+
+/* Buttons */
+.submit-btn {
+  padding: 12px 18px;
+  background: linear-gradient(90deg, #00c2ff, #009ed1);
+  color: #021827;
+  border: none;
+  border-radius: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0,194,255,0.12);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(0,194,255,0.18);
+}
+
+.submit-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  transform: none;
+  box-shadow: none;
+}
+
+.reset-btn {
+  padding: 10px 14px;
+  background: transparent;
+  color: rgba(255,255,255,0.92);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: background .12s ease, transform .08s ease;
+}
+
+.reset-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.02); }
+
+/* Success box */
+.success-box {
+  display: none;
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(0,255,185,0.06), rgba(0,255,185,0.03));
+  color: #bfffe6;
+  border: 1px solid rgba(0,255,185,0.12);
+  font-size: 14px;
+}
+
+/* Small responsive tweaks */
+@media (max-width: 720px) {
+  .start-project-wrap {
+    margin: 30px 16px;
+    padding: 22px;
+  }
+  .talk-form {
+    grid-template-columns: 1fr;
+  }
+  .form-actions {
+    justify-content: stretch;
+    flex-direction: column-reverse;
+  }
+  .submit-btn { width: 100%; }
+}
+
+/* Extra: subtle entrance animation (optional) */
+@keyframes fadeUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.start-project-wrap { animation: fadeUp .45s ease both; }
+
+/* Accessibility: focus outline for keyboard users */
+.talk-form input:focus-visible,
+.talk-form select:focus-visible,
+.talk-form textarea:focus-visible,
+.submit-btn:focus-visible,
+.reset-btn:focus-visible {
+  outline: 3px solid rgba(0,194,255,0.12);
+  outline-offset: 3px;
+}
