@@ -1,3 +1,4 @@
+// src/Pages/Contact.js
 import { useState } from "react";
 import "./Contact.css";
 
@@ -9,16 +10,17 @@ export default function Contact() {
     message: "",
   });
 
-  
   const [errors, setErrors] = useState({});
   const [showPopup, setShowPopup] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverMessage, setServerMessage] = useState("");
 
+  // API base (uses Vercel env on production, falls back to localhost in dev)
+  const API = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    
-    setErrors(prev => ({ ...prev, [e.target.name]: undefined }));
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
     setServerMessage("");
   };
 
@@ -29,46 +31,48 @@ export default function Contact() {
     setServerMessage("");
 
     try {
-      // add near top:
-const API = process.env.REACT_APP_API_URL || "http://localhost:8080";
+      const response = await fetch(`${API}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  try {
-    const response = await fetch(`${API}/api/contact`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-
-    // Try to read JSON (server returns { errors } on 400)
-    const data = await response.json().catch(() => null);
-
-    if (!response.ok) {
-      console.error("Server responded:", response.status, data);
-      if (data && data.errors) {
-        // display the first server validation message
-        const firstKey = Object.keys(data.errors)[0];
-        alert(data.errors[firstKey]);
-      } else if (data && data.error) {
-        alert(data.error);
-      } else {
-        alert("Failed to send message. Please check the form and try again.");
+      // Try to parse JSON safely
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (parseErr) {
+        // ignore JSON parse errors; data stays null
       }
-      return;
+
+      if (!response.ok) {
+        // If server returned validation errors in { errors: { field: msg } }
+        if (data && data.errors && typeof data.errors === "object") {
+          setErrors(data.errors);
+          // show first server error message in a top-level banner
+          const firstKey = Object.keys(data.errors)[0];
+          setServerMessage(data.errors[firstKey]);
+        } else if (data && data.error) {
+          setServerMessage(data.error);
+        } else {
+          setServerMessage("Failed to send message. Please check the form and try again.");
+        }
+        console.error("Contact API error:", response.status, data);
+        return;
+      }
+
+      // Success
+      setShowPopup(true);
+      setForm({ name: "", email: "", phone: "", message: "" });
+      setServerMessage("Message sent successfully!");
+      setTimeout(() => setShowPopup(false), 3000);
+    } catch (err) {
+      console.error("Network error:", err);
+      setServerMessage("Network error. Please try again later.");
+    } finally {
+      setSubmitting(false);
     }
-
-    // success
-    setShowPopup(true);
-    setForm({ name: "", email: "", phone: "", message: "" });
-    setTimeout(() => setShowPopup(false), 3000);
-
-  } catch (err) {
-    console.error("Network error:", err);
-    alert("Network error. Please try again later.");
-  }
-};
+  };
 
   return (
     <div className="contact-page">
