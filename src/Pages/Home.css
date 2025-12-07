@@ -7,6 +7,7 @@
   --card-shadow: 0 6px 15px rgba(0,0,0,0.12);
 }
 
+<<<<<<< HEAD
 
 *{box-sizing:border-box}
 img{max-width:100%;display:block}
@@ -15,6 +16,16 @@ img{max-width:100%;display:block}
 .hero {
   width: 100%;
   min-height: 60vh;
+=======
+/* GLOBAL RESET (small helpers) */
+*{box-sizing:border-box}
+img{max-width:100%;display:block}
+
+/* HERO SECTION */
+.hero {
+  width: 100%;
+  min-height: 60vh; /* more fluid height */
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
   height: auto;
   background-image: url(https://images.pexels.com/photos/3183197/pexels-photo-3183197.jpeg?auto=compress&cs=tinysrgb&h=750&w=1260);
   background-size: cover;
@@ -66,7 +77,11 @@ img{max-width:100%;display:block}
   transform: translateY(-3px);
 }
 
+<<<<<<< HEAD
 
+=======
+/* TRUST / LEADERSHIP SECTION */
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 .trust {
   background-color: #f7fbff; /* softened background for contrast */
   padding: 60px 18px;
@@ -126,7 +141,11 @@ img{max-width:100%;display:block}
 .features h2 {
   font-size: clamp(20px, 2.6vw, 32px);
   margin-bottom: 30px;
+<<<<<<< HEAD
   color:#f0f4f8;
+=======
+  color: var(--deep);
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 }
 
 .features-container {
@@ -157,7 +176,11 @@ img{max-width:100%;display:block}
   color: var(--primary);
 }
 
+<<<<<<< HEAD
 
+=======
+/* TEAM SECTION */
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 .team-section {
   width: 100%;
   padding: 40px 18px;
@@ -171,10 +194,16 @@ img{max-width:100%;display:block}
   font-size: clamp(20px, 2.8vw, 32px);
   font-weight: 700;
   margin-bottom: 28px;
+<<<<<<< HEAD
   color: #f0f4f8;
 }
 
 
+=======
+}
+
+/* Grid behavior: desktop two cards side-by-side; tablet stacked with two-column layout; mobile single column */
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 .team-grid {
   display: flex;
   gap: 20px;
@@ -212,7 +241,10 @@ img{max-width:100%;display:block}
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 6px;
+<<<<<<< HEAD
   color: var(--deep);
+=======
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 }
 
 .member-desc {
@@ -240,7 +272,11 @@ img{max-width:100%;display:block}
   transform: scale(1.04);
 }
 
+<<<<<<< HEAD
 
+=======
+/* TESTIMONIALS SECTION */
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 .testimonials {
   padding: 48px 18px;
   text-align: center;
@@ -250,7 +286,10 @@ img{max-width:100%;display:block}
 .testimonials h2 {
   font-size: clamp(20px, 2.6vw, 32px);
   margin-bottom: 28px;
+<<<<<<< HEAD
   color: #f0f4f8;
+=======
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 }
 
 .testimonial-cards {
@@ -284,7 +323,11 @@ img{max-width:100%;display:block}
   font-weight: 700;
 }
 
+<<<<<<< HEAD
 
+=======
+/* QUICK LINKS */
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 .quick-links {
   padding: 48px 18px;
   text-align: center;
@@ -324,7 +367,11 @@ img{max-width:100%;display:block}
   display: inline-block;
 }
 
+<<<<<<< HEAD
 
+=======
+/* CTA */
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 .cta {
   padding: 54px 18px;
   text-align: center;
@@ -359,13 +406,22 @@ img{max-width:100%;display:block}
   to { opacity: 1; transform: translateY(0); }
 }
 
+<<<<<<< HEAD
 
+=======
+/* RESPONSIVE RULES */
+/* Large desktops */
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 @media (min-width: 1200px) {
   .team-card { min-width: 420px; width: 46%; }
   .trust-box { width: 300px; }
 }
 
+<<<<<<< HEAD
 
+=======
+/* Tablet / small laptop */
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 @media (max-width: 1024px) {
   .hero { min-height: 50vh; padding: 36px 20px; }
   .team-card { width: 48%; min-width: 360px; }
@@ -373,7 +429,11 @@ img{max-width:100%;display:block}
   .trust-box { width: 300px; }
 }
 
+<<<<<<< HEAD
 
+=======
+/* Medium mobile / large phones */
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 @media (max-width: 768px) {
   .hero { min-height: 48vh; padding: 28px 16px; }
   .hero-card { padding: 26px; }
@@ -394,7 +454,11 @@ img{max-width:100%;display:block}
   .testimonial-card, .quick-card { width: 92%; max-width: 420px; }
 }
 
+<<<<<<< HEAD
 
+=======
+/* Small phones */
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 @media (max-width: 420px) {
   .hero-card { padding: 18px; }
   .hero-card h1 { font-size: 20px; }

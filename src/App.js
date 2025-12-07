@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 // src/App.js
+=======
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 import { useState } from "react";
 import { Link, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 
@@ -12,8 +15,11 @@ import Services from "./Pages/Services";
 import Privacy from "./Pages/Privacy";
 import Terms from "./Pages/Terms";
 
+<<<<<<< HEAD
 import StartYourProject from "./Pages/StartYourProject"; // <-- new
 
+=======
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
 import "./App.css";
 
 function App() {
@@ -34,7 +40,11 @@ function App() {
       <nav className="navbar">
         <div className="nav-left">
           <Link to="/" onClick={closeMobile} className="brand">
+<<<<<<< HEAD
             <img src="images/logo-2.png" alt="Jenizo Logo" className="logo-img" />
+=======
+            <img src="images/j.png" alt="Jenizo Logo" className="logo-img" />
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
           </Link>
         </div>
 
@@ -57,9 +67,12 @@ function App() {
           <li><Link to="/services" onClick={closeMobile}>Services</Link></li>
           <li><Link to="/careers" onClick={closeMobile}>Careers</Link></li>
           <li><Link to="/contact" onClick={closeMobile}>Contact</Link></li>
+<<<<<<< HEAD
 
           {/* SPA route link for Start Your Project */}
           <li><Link to="/start-your-project" onClick={closeMobile}>Start Your Project</Link></li>
+=======
+>>>>>>> 05e41a57fbcc9d4c256146fdb6c976117aa0dc31
         </ul>
       </nav>
 
