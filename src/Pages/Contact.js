@@ -81,16 +81,23 @@ export default function Contact() {
         </div>
 
         <div className="info-card">
-          <i className="fas fa-envelope info-icon" aria-hidden="true"></i>
-          <h3>Email</h3>
-          <p>info@jenizo.in</p>
-        </div>
+  <i className="fas fa-envelope info-icon" aria-hidden="true"></i>
+  <h3>Email</h3>
+
+  <a 
+    href="mailto:info@jenizo.in?subject=Inquiry%20from%20Website&body=Hello%20Jenizo%2C%0A"
+    className="email-link"
+  >
+    info@jenizo.in
+  </a>
+</div>
+
 
         <div className="info-card">
           <i className="fas fa-map-marker-alt info-icon" aria-hidden="true"></i>
           <h3>Office Location</h3>
           <a
-            href="https://maps.app.goo.gl/bjrhSL3tQx1xg7rh7"
+            href="https://maps.app.goo.gl/oNWgamRQXUdEnXTW6?g_st=ac"
             target="_blank"
             rel="noopener noreferrer"
             className="location-link"
