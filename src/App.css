@@ -92,7 +92,7 @@ body {
   background: rgba(0,0,0,0.06);
 }
 
-/* HAMBURGER (hidden desktop) */
+/* HAMBURGER BUTTON */
 .menu-toggle {
   display: none;
   background: transparent;
@@ -101,17 +101,31 @@ body {
   cursor: pointer;
   z-index: calc(var(--z-nav) + 2);
 }
+
+/* Hamburger lines (WHITE) */
 .menu-toggle .bar {
   display: block;
   width: 22px;
   height: 2px;
-  background: #222;
+  background: #ffffff !important; 
   margin: 4px 0;
   transition: transform .24s ease, opacity .2s ease;
 }
-.menu-toggle.open .bar:nth-child(1) { transform: translateY(6px) rotate(45deg); }
-.menu-toggle.open .bar:nth-child(2) { opacity: 0; transform: scaleX(0); }
-.menu-toggle.open .bar:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+/* White even in open animation */
+.menu-toggle.open .bar {
+  background: #ffffff !important;
+}
+
+.menu-toggle.open .bar:nth-child(1) { 
+  transform: translateY(6px) rotate(45deg); 
+}
+.menu-toggle.open .bar:nth-child(2) { 
+  opacity: 0; transform: scaleX(0); 
+}
+.menu-toggle.open .bar:nth-child(3) { 
+  transform: translateY(-6px) rotate(-45deg); 
+}
 
 /* FOOTER */
 .main-footer {
