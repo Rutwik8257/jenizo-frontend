@@ -16,7 +16,7 @@ export default function Contact() {
   const [serverMessage, setServerMessage] = useState("");
 
   // prefer explicit runtime override, then env var, then localhost
-  const API = (window && window.__API_URL__) || process.env.REACT_APP_API_URL || "http://localhost:8080";
+  const API = (typeof window !== "undefined" && window.__API_URL__) || process.env.REACT_APP_API_URL || "http://localhost:8080";
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -69,26 +69,25 @@ export default function Contact() {
   };
 
   return (
-    <div className="info-card">
-  <i className="fas fa-phone-alt info-icon"></i>
-  <h3>Phone Number</h3>
-  <a 
-    href="tel:+918179785211" 
-    className="phone-link"
-  >
-    +91 8179785211
-  </a>
-</div>
-
+    <div className="contact-page">
+      {/* CONTACT INFO COLUMN */}
+      <div className="contact-info">
+        <div className="info-card">
+          <i className="fas fa-phone-alt info-icon" aria-hidden="true"></i>
+          <h3>Phone Number</h3>
+          <a href="tel:+918179785211" className="phone-link">
+            +91 8179785211
+          </a>
+        </div>
 
         <div className="info-card">
-          <i className="fas fa-envelope info-icon"></i>
+          <i className="fas fa-envelope info-icon" aria-hidden="true"></i>
           <h3>Email</h3>
           <p>info@jenizo.in</p>
         </div>
 
         <div className="info-card">
-          <i className="fas fa-map-marker-alt info-icon"></i>
+          <i className="fas fa-map-marker-alt info-icon" aria-hidden="true"></i>
           <h3>Office Location</h3>
           <a
             href="https://maps.app.goo.gl/bjrhSL3tQx1xg7rh7"
@@ -106,12 +105,13 @@ export default function Contact() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <i className="fab fa-whatsapp info-icon whatsapp-icon"></i>
+          <i className="fab fa-whatsapp info-icon whatsapp-icon" aria-hidden="true"></i>
           <h3>WhatsApp</h3>
           <p>Chat / Call Us</p>
         </a>
       </div>
 
+      {/* FORM SECTION */}
       <div className="form-section">
         <h2>Send Us a Message</h2>
 
@@ -159,14 +159,14 @@ export default function Contact() {
           />
           {errors.message && <div className="field-error">{errors.message}</div>}
 
-          {serverMessage && <div className="server-message">{serverMessage}</div>}
+          {serverMessage && <div className="server-message" role="status">{serverMessage}</div>}
 
           <button type="submit" className="submit-btn" disabled={submitting}>
             {submitting ? "Sending..." : "Submit"}
           </button>
         </form>
 
-        {showPopup && <div className="popup-message">Message sent successfully!</div>}
+        {showPopup && <div className="popup-message" role="status">Message sent successfully!</div>}
       </div>
     </div>
   );
