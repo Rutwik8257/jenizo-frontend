@@ -69,13 +69,17 @@ export default function Contact() {
   };
 
   return (
-    <div className="contact-page">
-      <div className="contact-info">
-        <div className="info-card">
-          <i className="fas fa-phone-alt info-icon"></i>
-          <h3>Phone Number</h3>
-          <p>+91 8179785211</p>
-        </div>
+    <div className="info-card">
+  <i className="fas fa-phone-alt info-icon"></i>
+  <h3>Phone Number</h3>
+  <a 
+    href="tel:+918179785211" 
+    className="phone-link"
+  >
+    +91 8179785211
+  </a>
+</div>
+
 
         <div className="info-card">
           <i className="fas fa-envelope info-icon"></i>
@@ -98,7 +102,7 @@ export default function Contact() {
 
         <a
           className="info-card whatsapp-card"
-          href="https://wa.me/919876543210"
+          href="https://wa.me/918179785211"
           target="_blank"
           rel="noopener noreferrer"
         >
