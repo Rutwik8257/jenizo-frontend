@@ -5,159 +5,169 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const validator = require("validator");
-const sgMail = require("@sendgrid/mail");
+const nodemailer = require("nodemailer");
 
 const app = express();
 
-// trust proxy (needed on Render so IP detection & rate limiting work correctly)
+// Trust proxy (important on Render / many PaaS)
 app.set("trust proxy", process.env.TRUST_PROXY || 1);
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
 
-// ─────────────────────────────────────────────
-//  SENDGRID CONFIG
-// ─────────────────────────────────────────────
+/* ----------------- CORS Setup ----------------- */
+/**
+ * ALLOWED_ORIGIN env may be:
+ * - "*" (allow all) OR
+ * - a single origin string OR
+ * - a comma-separated list of origins
+ */
+const rawAllowed = process.env.ALLOWED_ORIGIN || "*";
+const allowedOrigins =
+  rawAllowed === "*"
+    ? ["*"]
+    : rawAllowed.split(",").map((s) => s.trim()).filter(Boolean);
 
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log("SendGrid API client configured.");
-} else {
-  console.error("SENDGRID_API_KEY is missing! Email sending will not work.");
-}
+const corsOptions = {
+  origin: function (origin, callback) {
+    // allow requests with no origin (curl, mobile apps, server-to-server)
+    if (!origin) return callback(null, true);
 
-// Defaults using your emails (can be overridden by env)
-const FROM_EMAIL = process.env.FROM_EMAIL || "rutwik710@gmail.com";
-const TO_EMAIL = process.env.TO_EMAIL || FROM_EMAIL;
-const REPLY_TO_DEFAULT = process.env.REPLY_TO || "rutwikbanda2022@gmail.com";
+    if (allowedOrigins.includes("*") || allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  },
+  optionsSuccessStatus: 200,
+};
+app.use((req, res, next) => {
+  // For preflight CORS errors to show clearer logs
+  next();
+});
+app.use(cors(corsOptions));
 
-// Helper to send email via SendGrid
-async function sendMail({ subject, text, html, replyTo }) {
-  if (!process.env.SENDGRID_API_KEY) {
-    throw new Error("SendGrid API key not configured");
-  }
-
-  const msg = {
-    to: TO_EMAIL,
-    from: {
-      email: FROM_EMAIL,
-      name: "Jenizo Website",
-    },
-    subject,
-    text,
-    html,
-    replyTo: replyTo || REPLY_TO_DEFAULT,
-  };
-
-  const [resp] = await sgMail.send(msg);
-  return resp;
-}
-
-// ─────────────────────────────────────────────
-//  MIDDLEWARE
-// ─────────────────────────────────────────────
-
+/* ----------------- Security & Parsing ----------------- */
 app.use(helmet());
 app.use(express.json({ limit: "100kb" }));
 
-// CORS: support multiple origins via ALLOWED_ORIGIN env (comma-separated)
-const allowedOrigins = (process.env.ALLOWED_ORIGIN || "")
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // No origin = server-to-server / curl / Postman -> allow
-      if (!origin) return callback(null, true);
-
-      if (!allowedOrigins.length) {
-        // If no ALLOWED_ORIGIN set, allow all (you can tighten later)
-        return callback(null, true);
-      }
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      console.warn(`[CORS] Blocked origin: ${origin}`);
-      return callback(new Error("Not allowed by CORS"));
-    },
-  })
-);
-
-// Rate limiter for all /api/ routes
+/* ----------------- Rate Limiting ----------------- */
 const limiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 20,
+  windowMs: 60 * 1000, // 1 minute
+  max: 12,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: "Too many requests, please try again later." },
+  handler: (req, res) => res.status(429).json({ error: "Too many requests, please try again later." }),
 });
 app.use("/api/", limiter);
 
-// Small logger
-app.use((req, res, next) => {
-  console.log(
-    `[${new Date().toISOString()}] ${req.ip} ${req.method} ${req.path} Origin:${req.headers.origin || "-"
-    }`
-  );
-  next();
-});
+/* ----------------- Mail provider setup ----------------- */
+let mailProvider = null; // "sendgrid" or "smtp" or null
+let sendGridClient = null;
+let smtpTransporter = null;
+let mailReady = false;
 
-// ─────────────────────────────────────────────
-//  BASIC ROUTES
-// ─────────────────────────────────────────────
+// Try to configure SendGrid if API key present
+if (process.env.SENDGRID_API_KEY) {
+  try {
+    // lazy require so file doesn't crash if package missing during local dev
+    sendGridClient = require("@sendgrid/mail");
+    sendGridClient.setApiKey(process.env.SENDGRID_API_KEY);
+    mailProvider = "sendgrid";
+    mailReady = true; // will remain true unless send fails at runtime
+    console.log("SendGrid API client configured.");
+  } catch (e) {
+    console.warn("Failed to require @sendgrid/mail — continuing without SendGrid.", e && e.message ? e.message : e);
+    sendGridClient = null;
+    mailReady = false;
+  }
+}
 
+// nodemailer SMTP fallback if SendGrid not configured or you prefer SMTP as fallback
+function createSmtpTransporterFromEnv() {
+  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) return null;
+  try {
+    const transport = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : 587,
+      secure: process.env.EMAIL_SECURE === "true", // true for 465
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      requireTLS: true,
+      // optional timeouts can be set via env if needed
+    });
+    return transport;
+  } catch (e) {
+    console.warn("Failed to create SMTP transporter:", e && e.message ? e.message : e);
+    return null;
+  }
+}
+
+if (!sendGridClient) {
+  smtpTransporter = createSmtpTransporterFromEnv();
+  if (smtpTransporter) {
+    mailProvider = "smtp";
+    // verify transporter
+    smtpTransporter.verify().then(() => {
+      mailReady = true;
+      console.log("SMTP transporter verified and ready.");
+    }).catch((err) => {
+      mailReady = false;
+      console.warn("SMTP verification failed:", err && err.message ? err.message : err);
+    });
+  } else {
+    mailReady = false;
+    console.warn("No mail transporter configured (SendGrid missing and SMTP vars not set).");
+  }
+} else {
+  // If sendGrid configured, optionally we could do a simple test (skip heavy network op)
+  // We'll assume mailReady true here; any runtime errors will be logged.
+  mailProvider = "sendgrid";
+}
+
+/* ----------------- Utilities ----------------- */
+function sanitizeText(s) {
+  return String(s || "").trim();
+}
+
+/* ----------------- Routes ----------------- */
 app.get("/", (req, res) => {
   res.send("Jenizo backend running. Use /api endpoints.");
 });
 
 app.get("/api/health", (req, res) => {
-  res.json({
-    ok: true,
-    env: process.env.NODE_ENV || "development",
-    provider: "sendgrid",
-    hasKey: !!process.env.SENDGRID_API_KEY,
-    from: FROM_EMAIL,
-    to: TO_EMAIL,
-  });
+  res.json({ ok: true, env: process.env.NODE_ENV || "development", mailReady, provider: mailProvider });
 });
 
-// ─────────────────────────────────────────────
-//  VALIDATION HELPERS
-// ─────────────────────────────────────────────
-
-function validateInquiry(data = {}) {
+/* ---------- Validation helpers (inquiry + contact) ---------- */
+function validateInquiryPayload(data = {}) {
   const errors = {};
   const out = {};
-
-  out.fullName = (data.fullName || "").trim();
-  out.email = (data.email || "").trim();
-  out.phone = (data.phone || "").trim();
-  out.projectType = (data.projectType || "").trim();
-  out.budget = (data.budget || "").trim();
-  out.description = (data.description || "").trim();
+  out.fullName = sanitizeText(data.fullName);
+  out.email = sanitizeText(data.email);
+  out.phone = sanitizeText(data.phone);
+  out.projectType = sanitizeText(data.projectType);
+  out.budget = sanitizeText(data.budget);
+  out.description = sanitizeText(data.description);
 
   if (!out.fullName) errors.fullName = "Full name is required.";
   if (!out.email) errors.email = "Email is required.";
-  else if (!validator.isEmail(out.email)) errors.email = "Invalid email.";
+  else if (!validator.isEmail(out.email)) errors.email = "Invalid email address.";
   if (!out.phone) errors.phone = "Phone number is required.";
-  else if (!/^[+0-9\s\-()]{7,30}$/.test(out.phone)) errors.phone = "Invalid phone number.";
+  else if (!/^[+0-9\s\-()]{7,40}$/.test(out.phone)) errors.phone = "Invalid phone number.";
   if (!out.projectType) errors.projectType = "Project type is required.";
   if (!out.budget) errors.budget = "Budget is required.";
 
   return { valid: Object.keys(errors).length === 0, errors, out };
 }
 
-function validateContact(data = {}) {
+function validateContactPayload(data = {}) {
   const errors = {};
   const out = {};
-
-  out.name = (data.name || "").trim();
-  out.email = (data.email || "").trim();
-  out.phone = (data.phone || "").trim();
-  out.message = (data.message || "").trim();
+  out.name = sanitizeText(data.name);
+  out.email = sanitizeText(data.email);
+  out.phone = sanitizeText(data.phone);
+  out.message = sanitizeText(data.message);
 
   if (!out.name || out.name.length < 2) errors.name = "Name is required.";
   if (!out.email || !validator.isEmail(out.email)) errors.email = "Valid email is required.";
@@ -167,25 +177,53 @@ function validateContact(data = {}) {
   return { valid: Object.keys(errors).length === 0, errors, out };
 }
 
-// ─────────────────────────────────────────────
-//  /api/inquiries  (Start Your Project form)
-// ─────────────────────────────────────────────
+/* ----------------- Mail sending wrapper ----------------- */
+async function sendMailUsingProvider({ to, subject, text, html, replyTo }) {
+  if (mailProvider === "sendgrid" && sendGridClient) {
+    const from = process.env.SENDGRID_FROM || process.env.SMTP_FROM || process.env.EMAIL_USER;
+    if (!from) throw new Error("SENDGRID_FROM (or SMTP_FROM/EMAIL_USER) not set");
+    const msg = {
+      to,
+      from,
+      subject,
+      text,
+      html,
+      replyTo: replyTo || undefined,
+    };
+    // sendGridClient.send returns a Promise
+    return sendGridClient.send(msg);
+  }
 
+  if (mailProvider === "smtp" && smtpTransporter) {
+    const mailOptions = {
+      from: process.env.SMTP_FROM || process.env.EMAIL_USER || process.env.SENDGRID_FROM,
+      to,
+      subject,
+      text,
+      html,
+      replyTo: replyTo || undefined,
+    };
+    return smtpTransporter.sendMail(mailOptions);
+  }
+
+  throw new Error("No mail provider configured");
+}
+
+/* ----------------- /api/inquiries ----------------- */
 app.post("/api/inquiries", async (req, res) => {
   try {
-    const { valid, errors, out } = validateInquiry(req.body || {});
+    const { valid, errors, out } = validateInquiryPayload(req.body || {});
     if (!valid) return res.status(400).json({ ok: false, errors });
+
+    if (!mailReady) {
+      console.error("Mail transporter not ready.");
+      return res.status(503).json({ error: "Email service unavailable. Please try again later." });
+    }
 
     const submittedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
     const subject = `New Project Inquiry — ${out.fullName}`;
 
-    const safeDescHtml = out.description
-      ? `<p><strong>Project Description:</strong><br/>${validator
-        .escape(out.description)
-        .replace(/\n/g, "<br/>")}</p>`
-      : "";
-    const safeDescText = out.description ? `Project Description:\n${out.description}\n\n` : "";
-
+    const safeDescHtml = out.description ? `<p><strong>Project Description:</strong><br/>${validator.escape(out.description).replace(/\n/g, "<br/>")}</p>` : "";
     const html = `
       <div style="font-family: Arial,Helvetica,sans-serif;color:#222;">
         <h2>New Project Inquiry</h2>
@@ -208,32 +246,40 @@ Phone: ${out.phone}
 Project Type: ${out.projectType}
 Estimated Budget: ${out.budget}
 
-${safeDescText}Submitted at: ${submittedAt} (Asia/Kolkata)
-`.trim();
+${out.description ? "Project Description:\n" + out.description + "\n\n" : ""}
+Submitted at: ${submittedAt} (Asia/Kolkata)
+`;
 
-    await sendMail({
+    const to = process.env.TO_EMAIL || process.env.COMPANY_EMAIL;
+    if (!to) return res.status(500).json({ error: "Server misconfiguration: destination email not set" });
+
+    const info = await sendMailUsingProvider({
+      to,
       subject,
       text,
       html,
-      replyTo: out.email, // reply will go to the client who submitted
+      replyTo: out.email, // reply goes to submitter
     });
 
-    return res.status(200).json({ ok: true, message: "Inquiry sent" });
+    // If using nodemailer, info.messageId exists; SendGrid returns array/res object
+    const messageId = (info && info.messageId) || (Array.isArray(info) && info[0] && info[0].headers && info[0].headers["x-message-id"]) || null;
+
+    return res.status(200).json({ ok: true, message: "Inquiry sent", messageId });
   } catch (err) {
-    console.error("Error in /api/inquiries:", err && err.response && err.response.body
-      ? err.response.body
-      : err.stack || err);
+    console.error("Error in /api/inquiries:", err && err.stack ? err.stack : err);
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 });
 
-// ─────────────────────────────────────────────
-//  /api/contact  (Contact page form)
-// ─────────────────────────────────────────────
-
+/* ----------------- /api/contact ----------------- */
 app.post("/api/contact", async (req, res) => {
   try {
-    const { valid, errors, out } = validateContact(req.body || {});
+    if (!mailReady) {
+      console.error("Mail transporter not ready.");
+      return res.status(503).json({ error: "Email service unavailable. Please try again later." });
+    }
+
+    const { valid, errors, out } = validateContactPayload(req.body || {});
     if (!valid) return res.status(400).json({ errors });
 
     const submittedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
@@ -244,15 +290,12 @@ app.post("/api/contact", async (req, res) => {
         <p><strong>Name:</strong> ${validator.escape(out.name)}</p>
         <p><strong>Email:</strong> ${validator.escape(out.email)}</p>
         <p><strong>Phone:</strong> ${validator.escape(out.phone)}</p>
-        <p><strong>Message:</strong><br/>${validator
-          .escape(out.message)
-          .replace(/\n/g, "<br/>")}</p>
+        <p><strong>Message:</strong><br/>${validator.escape(out.message).replace(/\n/g, "<br/>")}</p>
         <p style="color:#666;font-size:12px;">Submitted at: ${submittedAt} (Asia/Kolkata)</p>
       </div>
     `;
 
-    const text = `
-New Contact Message
+    const text = `New Contact Message
 
 Name: ${out.name}
 Email: ${out.email}
@@ -262,29 +305,33 @@ Message:
 ${out.message}
 
 Submitted at: ${submittedAt}
-`.trim();
+`;
 
-    await sendMail({
+    const to = process.env.COMPANY_EMAIL || process.env.TO_EMAIL;
+    if (!to) return res.status(500).json({ error: "Server misconfiguration: destination email not set" });
+
+    const info = await sendMailUsingProvider({
+      to,
       subject: `Contact Form — ${out.name}`,
       text,
       html,
-      replyTo: out.email, // reply goes to person who filled form
+      replyTo: out.email,
     });
 
-    console.log("Contact mail sent successfully.");
-    return res.status(200).json({ ok: true, message: "Message sent" });
+    const messageId = (info && info.messageId) || (Array.isArray(info) && info[0] && info[0].headers && info[0].headers["x-message-id"]) || null;
+
+    console.log("Contact mail sent, messageId:", messageId);
+
+    return res.status(200).json({ ok: true, messageId });
   } catch (err) {
-    console.error("Error in /api/contact handler:", err && err.response && err.response.body
-      ? err.response.body
-      : err.stack || err);
+    console.error("Error in /api/contact handler:", err && err.stack ? err.stack : err);
+    // If sendgrid returns Forbidden/401, it will surface here - logs will show details
     return res.status(500).json({ error: "Internal Server Error — check server logs" });
   }
 });
 
-// ─────────────────────────────────────────────
-//  START SERVER
-// ─────────────────────────────────────────────
-
+/* ----------------- Start ----------------- */
 app.listen(PORT, () => {
   console.log(`Inquiry server listening on port ${PORT}`);
+  console.log(`Mail provider: ${mailProvider || "none"}, mailReady: ${mailReady}`);
 });
