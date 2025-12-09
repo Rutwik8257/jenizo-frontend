@@ -1,13 +1,10 @@
 // src/Pages/ApplicationForm.jsx
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
 import "./ApplicationForm.css";
 
 export default function ApplicationForm() {
   const navigate = useNavigate();
-  const { logout } = useContext(AuthContext);
-
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -18,17 +15,47 @@ export default function ApplicationForm() {
     skills: "",
     domain: "",
     otherDomain: "",
-    github: "",
+    github: ""
   });
-
-  const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // your Google form base (use your full real URL)
-  const GOOGLE_FORM_BASE =
-    "https://docs.google.com/forms/d/e/1FAIpQLSciNNPc24HpQRVrS7ZsNEn6riJm5LFoVUc5Idz3rFH5DBhBKw/viewform";
+  // fill email from logged-in user if available
+  useEffect(() => {
+    try {
+      const u = localStorage.getItem("user");
+      if (u) {
+        const user = JSON.parse(u);
+        if (user.email) setForm(prev => ({ ...prev, email: user.email }));
+      }
+    } catch {}
+  }, []);
 
+  // If the Google Form confirmation link returns with ?submitted=1
+  useEffect(() => {
+    const qp = new URLSearchParams(window.location.search);
+    if (qp.get("submitted") === "1") {
+      // logout the user and clear awaiting flag
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("awaiting_submission");
+      window.dispatchEvent(new Event("authChanged"));
+      setInfo("Thanks — your application was received. You have been logged out.");
+      // clear query param
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      setTimeout(() => navigate("/login"), 2500);
+    }
+  }, [navigate]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Google Form base (use your actual prefill base)
+  const GOOGLE_FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSciNNPc24HpQRVrS7ZsNEn6riJm5LFoVUc5Idz3rFH5DBhBKw/viewform";
   const ENTRY = {
     fullName: "entry.114660488",
     email: "entry.417408789",
@@ -37,79 +64,41 @@ export default function ApplicationForm() {
     cgpa: "entry.1878924051",
     skills: "entry.1938146617",
     domain: "entry.1974268023",
-  };
-
-  // detect returned users from Google Form confirmation ( ?submitted=1 )
-  useEffect(() => {
-    const qp = new URLSearchParams(window.location.search);
-    if (qp.get("submitted") === "1") {
-      // log them out via context so navbar updates
-      logout();
-      // clear awaiting flag too
-      localStorage.removeItem("awaiting_submission");
-
-      setInfo("Thanks — your application was received. You have been logged out.");
-      // clear query param so refresh doesn't repeat
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-
-      // redirect to login after short delay
-      setTimeout(() => {
-        navigate("/login");
-      }, 1900);
-    }
-  }, [logout, navigate]);
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }));
-  };
-
-  const validate = () => {
-    if (!form.fullName.trim()) return "Full name is required.";
-    if (!form.email.trim()) return "Email is required.";
-    if (!/^\S+@\S+\.\S+$/.test(form.email)) return "Enter a valid email.";
-    if (!form.domain) return "Choose a preferred internship domain.";
-    return null;
+    github: "entry.000000000" // replace if you have an entry id for github
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
-    setInfo("");
+    setLoading(true);
 
-    const v = validate();
-    if (v) {
-      setError(v);
+    // basic validation
+    if (!form.fullName || !form.email || !form.domain) {
+      setError("Please fill required fields.");
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-
     const params = new URLSearchParams();
     params.append("usp", "pp_url");
-
-    params.append(ENTRY.fullName, form.fullName || "");
-    params.append(ENTRY.email, form.email || "");
-    params.append(ENTRY.phone, form.phone || "");
-    params.append(ENTRY.college, form.college || "");
-    params.append(ENTRY.cgpa, form.cgpa || "");
-    params.append(ENTRY.skills, form.skills || "");
-    const domainValue = form.domain === "other" ? form.otherDomain : form.domain;
-    params.append(ENTRY.domain, domainValue || "");
+    params.append(ENTRY.fullName, form.fullName);
+    params.append(ENTRY.email, form.email);
+    params.append(ENTRY.phone, form.phone);
+    params.append(ENTRY.college, form.college);
+    params.append(ENTRY.cgpa, form.cgpa);
+    params.append(ENTRY.skills, form.skills);
+    params.append(ENTRY.domain, form.domain === "other" ? form.otherDomain : form.domain);
+    if (ENTRY.github) params.append(ENTRY.github, form.github);
 
     const finalURL = `${GOOGLE_FORM_BASE}?${params.toString()}`;
 
-    // mark that the user opened the Google Form from our flow
+    // mark awaiting submission so we know user opened the Google Form from our flow
     localStorage.setItem("awaiting_submission", "1");
 
-    // open in new tab so user can attach resume & submit
+    // Open Google Form in new tab
     window.open(finalURL, "_blank");
 
-    setInfo(
-      "Google Form opened in a new tab with your answers prefilled. Please attach your resume on the Google Form (if required) and submit the form there. Then click the 'Return to Jenizo' link on the confirmation page to finish."
-    );
-
+    setInfo("Google Form opened in a new tab. After submitting, please click the 'Return to Jenizo' link or visit Jenizo to complete (you will be logged out automatically).");
     setLoading(false);
   };
 
@@ -128,184 +117,77 @@ export default function ApplicationForm() {
           <p className="required-note">* Indicates required question</p>
         </div>
 
+        {/* Full Name */}
         <div className="form-card">
-          <label className="question">
-            Full Name <span className="required">*</span>
-          </label>
-          <input
-            name="fullName"
-            type="text"
-            className="text-input"
-            placeholder="Your answer"
-            value={form.fullName}
-            onChange={handleChange}
-          />
+          <label className="question">Full Name <span className="required">*</span></label>
+          <input name="fullName" type="text" className="text-input" placeholder="Your answer" value={form.fullName} onChange={handleChange} />
         </div>
 
+        {/* Email */}
         <div className="form-card">
-          <label className="question">
-            Email Address <span className="required">*</span>
-          </label>
-          <input
-            name="email"
-            type="email"
-            className="text-input"
-            placeholder="Your answer"
-            value={form.email}
-            onChange={handleChange}
-          />
+          <label className="question">Email Address <span className="required">*</span></label>
+          <input name="email" type="email" className="text-input" placeholder="Your answer" value={form.email} onChange={handleChange} />
         </div>
 
+        {/* Phone */}
         <div className="form-card">
           <label className="question">Phone Number</label>
-          <input
-            name="phone"
-            type="text"
-            className="text-input"
-            placeholder="Your answer"
-            value={form.phone}
-            onChange={handleChange}
-          />
+          <input name="phone" type="text" className="text-input" placeholder="Your answer" value={form.phone} onChange={handleChange} />
         </div>
 
+        {/* College */}
         <div className="form-card">
           <label className="question">College/University Name</label>
-          <input
-            name="college"
-            type="text"
-            className="text-input"
-            placeholder="Your answer"
-            value={form.college}
-            onChange={handleChange}
-          />
+          <input name="college" type="text" className="text-input" placeholder="Your answer" value={form.college} onChange={handleChange} />
         </div>
 
+        {/* CGPA */}
         <div className="form-card">
           <label className="question">CGPA/Percentage</label>
-          <input
-            name="cgpa"
-            type="text"
-            className="text-input"
-            placeholder="Your answer"
-            value={form.cgpa}
-            onChange={handleChange}
-          />
+          <input name="cgpa" type="text" className="text-input" placeholder="Your answer" value={form.cgpa} onChange={handleChange} />
         </div>
 
+        {/* Degree */}
         <div className="form-card">
           <label className="question">Degree/Program</label>
-          <input
-            name="degree"
-            type="text"
-            className="text-input"
-            placeholder="Your answer"
-            value={form.degree}
-            onChange={handleChange}
-          />
+          <input name="degree" type="text" className="text-input" placeholder="Your answer" value={form.degree} onChange={handleChange} />
         </div>
 
+        {/* Skills */}
         <div className="form-card">
           <label className="question">Technical Skills</label>
-          <input
-            name="skills"
-            type="text"
-            className="text-input"
-            placeholder="E.g., React, Node, Python"
-            value={form.skills}
-            onChange={handleChange}
-          />
+          <input name="skills" type="text" className="text-input" placeholder="E.g., React, Node, Python" value={form.skills} onChange={handleChange} />
         </div>
 
+        {/* Domain */}
         <div className="form-card">
-          <label className="question">
-            Preferred Internship Domain <span className="required">*</span>
-          </label>
-
+          <label className="question">Preferred Internship Domain <span className="required">*</span></label>
           <div className="radio-group">
-            <label>
-              <input
-                type="radio"
-                name="domain"
-                value="Web Development"
-                checked={form.domain === "Web Development"}
-                onChange={handleChange}
-              />{" "}
-              Web Development
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="domain"
-                value="App Development"
-                checked={form.domain === "App Development"}
-                onChange={handleChange}
-              />{" "}
-              App Development
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="domain"
-                value="QA Tester"
-                checked={form.domain === "QA Tester"}
-                onChange={handleChange}
-              />{" "}
-              QA Tester
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="domain"
-                value="DevOps Engineer"
-                checked={form.domain === "DevOps Engineer"}
-                onChange={handleChange}
-              />{" "}
-              DevOps Engineer
-            </label>
+            {["Web Development","App Development","QA Tester","DevOps Engineer"].map(d => (
+              <label key={d}>
+                <input type="radio" name="domain" value={d} checked={form.domain === d} onChange={handleChange} />
+                {" "}{d}
+              </label>
+            ))}
 
             <label className="other-option">
-              <input
-                type="radio"
-                name="domain"
-                value="other"
-                checked={form.domain === "other"}
-                onChange={handleChange}
-              />{" "}
-              Other:
-              <input
-                name="otherDomain"
-                className="other-input"
-                placeholder="Your answer"
-                value={form.otherDomain}
-                onChange={handleChange}
-              />
+              <input type="radio" name="domain" value="other" checked={form.domain === "other"} onChange={handleChange} /> Other:
+              <input name="otherDomain" className="other-input" placeholder="Your answer" value={form.otherDomain} onChange={handleChange} />
             </label>
           </div>
         </div>
 
+        {/* Resume note */}
         <div className="form-card">
           <label className="question">Upload Resume ( PDF Only )</label>
-          <input
-            type="file"
-            className="file-input"
-            disabled
-            title="Please attach your resume on the Google Form after it opens"
-          />
-          <p style={{ fontSize: 12, color: "#666" }}>
-            Resume upload is disabled here. After the Google Form opens, attach your resume there.
-          </p>
+          <input type="file" className="file-input" disabled title="Please attach your resume on the Google Form after it opens" />
+          <p style={{ fontSize: 12, color: "#666" }}>Resume upload is disabled here — attach it on the Google Form page.</p>
         </div>
 
+        {/* GitHub */}
         <div className="form-card">
           <label className="question">Portfolio / GitHub Link (Optional)</label>
-          <input
-            name="github"
-            type="text"
-            className="text-input"
-            placeholder="Your answer"
-            value={form.github}
-            onChange={handleChange}
-          />
+          <input name="github" type="text" className="text-input" placeholder="Your answer" value={form.github} onChange={handleChange} />
         </div>
 
         <div className="form-card submit-card">
@@ -315,17 +197,8 @@ export default function ApplicationForm() {
           <p className="powered-by">Never submit passwords through this form.</p>
         </div>
 
-        {error && (
-          <div className="form-card" style={{ borderLeft: "4px solid #e74c3c" }}>
-            <p style={{ color: "#e74c3c" }}>{error}</p>
-          </div>
-        )}
-
-        {info && (
-          <div className="form-card" style={{ borderLeft: "4px solid #2ecc71" }}>
-            <p style={{ color: "#2ecc71" }}>{info}</p>
-          </div>
-        )}
+        {error && <div className="form-card" style={{ borderLeft: "4px solid #e74c3c" }}><p style={{ color: "#e74c3c" }}>{error}</p></div>}
+        {info && <div className="form-card" style={{ borderLeft: "4px solid #2ecc71" }}><p style={{ color: "#2ecc71" }}>{info}</p></div>}
       </form>
     </div>
   );
