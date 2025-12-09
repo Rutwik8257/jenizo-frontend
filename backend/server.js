@@ -170,6 +170,33 @@ async function sendViaSMTP({ to, from, subject, text, html, replyTo }) {
   return smtpTransporter.sendMail(mailOptions);
 }
 
+/* ---------- MongoDB + Auth routes (INSERT HERE) ---------- */
+const mongoose = require('mongoose');
+
+// connect to mongo
+const mongoUri = (process.env.MONGODB_URI || "").trim();
+if (!mongoUri) {
+  console.warn("MONGODB_URI not set - auth/routes requiring DB will fail until configured.");
+} else {
+mongoose.connect(mongoUri)
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.error("MongoDB connect error:", err && err.message ? err.message : err));
+
+}
+
+// mount auth + application API routes if present
+let authRoutes, applicationRoutes;
+try {
+  authRoutes = require('./routes/auth');
+  app.use('/api/auth', authRoutes);
+  console.log("Mounted /api/auth routes");
+} catch (e) {
+  console.warn("Auth routes not found (./routes/auth). Create the file and export an Express router to enable authentication.", e && e.message ? e.message : e);
+}
+
+
+
+
 /* ---------- Routes ---------- */
 app.get("/", (req, res) => res.send("Jenizo backend running. Use /api endpoints."));
 
