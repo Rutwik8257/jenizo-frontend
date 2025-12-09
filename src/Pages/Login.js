@@ -35,14 +35,14 @@ export default function Login() {
       }
 
       const data = await res.json();
-      // store token & user (adjust field names to match your backend response)
+      // store token & user — adapt keys to match your backend response
       if (data.token) localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user || { email: form.email }));
 
-      // notify navbar and other listeners
+      // notify other parts of app (Navbar)
       window.dispatchEvent(new Event("authChanged"));
 
-      // navigate to application form with position preserved
+      // go to application form (preserve position if any)
       navigate("/application-form", { state: { position } });
     } catch (err) {
       console.error("Login error:", err);
