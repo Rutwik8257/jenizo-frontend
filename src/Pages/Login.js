@@ -1,65 +1,52 @@
 // src/Pages/Login.jsx
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
 import "./Login.css";
+
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useContext(AuthContext);
-
   const position = location.state?.position || "";
 
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  const [error, setError] = useState("");
 
-  const API_BASE = "http://localhost:8080"; // change if backend runs elsewhere
-
-  const handleChange = (e) => {
-    setForm((s) => ({ ...s, [e.target.name]: e.target.value }));
-  };
+  const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErr("");
+    setError("");
     setLoading(true);
     try {
-      const resp = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.email, password: form.password }),
       });
 
-      const text = await resp.text();
-      let data = null;
-      try { data = JSON.parse(text); } catch { data = { ok: resp.ok, message: text }; }
-
-      if (!resp.ok) {
-        setErr(data.message || "Login failed");
-        setLoading(false);
-        return;
+      if (!res.ok) {
+        const txt = await res.text();
+        let payload;
+        try { payload = JSON.parse(txt); } catch { payload = { message: txt }; }
+        throw new Error(payload.error || payload.message || `HTTP ${res.status}`);
       }
 
-      // on success: prefer server token+user; if not present store email as user
-      const token = data.token || data.accessToken || null;
-      const user = data.user || { email: form.email };
+      const data = await res.json();
+      // store token & user (adjust field names to match your backend response)
+      if (data.token) localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user || { email: form.email }));
 
-      if (token) login(token, user);
-      else {
-        // still set localStorage so context/readers can work
-        login(null, user);
-      }
+      // notify navbar and other listeners
+      window.dispatchEvent(new Event("authChanged"));
 
-      // navigate to application form (forwarding position if any)
+      // navigate to application form with position preserved
       navigate("/application-form", { state: { position } });
     } catch (err) {
       console.error("Login error:", err);
-      setErr("Network or server error");
+      setError(err.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -90,11 +77,11 @@ export default function Login() {
           />
 
           <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Logging in…" : "Login"}
           </button>
         </form>
 
-        {err && <p style={{ color: "red", marginTop: 10 }}>{err}</p>}
+        {error && <p className="form-error">{error}</p>}
 
         <p className="login-link">
           Don’t have an account?{" "}
