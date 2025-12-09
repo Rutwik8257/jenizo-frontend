@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Login.css";
 
-const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
+const API_BASE = "https://jenizo-backend.onrender.com"; // << hardcoded for quick test
+console.log("TEST API_BASE (hardcoded):", API_BASE);
 
 export default function Login() {
   const navigate = useNavigate();
