@@ -1,0 +1,197 @@
+/* ApplicationForm.css */
+
+
+.form-bg {
+  width: 100%;
+  min-height: 100vh;
+  padding-bottom: 50px;
+}
+
+
+/* Purple Banner */
+.banner {
+  width: 100%;
+  height: 180px;
+  
+}
+
+.required-note {
+  margin-top: 20px;
+  color: #d93025;
+  font-size: 14px;
+}
+
+/* Question Label */
+.question {
+  font-size: 17px;
+  color: #202124;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.required {
+  color: #d93025;
+  font-weight: bold;
+}
+
+/* Input style like Google Forms */
+.text-input {
+  width: 70%;
+  padding: 7px 0;
+  font-size: 15px;
+  border: none;
+  border-bottom: 2px solid #dadce0;
+  outline: none;
+  transition: all 0.3s ease;
+  display: block;
+}
+
+.text-input:focus {
+  border-bottom: 2px solid #5d00ff;
+}
+
+/* Radio Buttons */
+.radio-option {
+  display: block;
+  margin: 10px 0;
+  font-size: 16px;
+  color: #202124;
+}
+
+.radio-option input {
+  margin-right: 10px;
+}
+
+/* File Upload */
+.file-input {
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+/* Submit Button */
+.submit-btn {
+  background: #5d00ff;
+  color: white;
+  padding: 12px 28px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background: #4b00cc;
+}
+
+.powered-by {
+  margin-top: 15px;
+  font-size: 12px;
+  color: #70757a;
+}
+
+
+
+.form-container {
+  width: 55%;
+  margin: -110px auto 0 auto;
+}
+
+/* Cards */
+.form-card {
+  background: #ffffff;
+  padding: 25px 30px;
+  margin-bottom: 18px;
+  border-radius: 8px;
+  border: 1px solid #dadce0;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.2);
+}
+
+.form-title {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.form-desc {
+  color: #5f6368;
+  line-height: 1.5;
+  font-size: 15px;
+}
+
+.required-note {
+  color: #d93025;
+  margin-top: 18px;
+  font-size: 14px;
+}
+
+.question {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.required {
+  color: #d93025;
+}
+
+.text-input {
+  width: 60%;
+  padding: 7px 0;
+  border: none;
+  border-bottom: 2px solid #dadce0;
+  font-size: 15px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.text-input:focus {
+  border-bottom: 2px solid #5d00ff;
+}
+
+.radio-group label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+.other-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.other-input {
+  width: 40%;
+  padding: 5px 0;
+  border: none;
+  border-bottom: 2px solid #dadce0;
+  outline: none;
+}
+
+.file-input {
+  margin-top: 10px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.submit-btn {
+  background: #5d00ff;
+  color: white;
+  padding: 10px 25px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background: #4500c4;
+}
+
+.powered-by {
+  margin-top: 12px;
+  color: #70757a;
+  font-size: 12px;
+}
