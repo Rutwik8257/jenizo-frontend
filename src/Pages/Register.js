@@ -7,6 +7,7 @@ const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
 export default function Register() {
   const navigate = useNavigate();
+
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,7 +38,7 @@ export default function Register() {
         throw new Error(payload.error || payload.message || `HTTP ${res.status}`);
       }
 
-      // registration success - redirect to login
+      // If register succeeded, redirect to login
       navigate("/login");
     } catch (err) {
       console.error("Register error:", err);
