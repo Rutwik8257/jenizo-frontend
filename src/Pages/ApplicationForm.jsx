@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ApplicationForm.css";
 
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
+
 export default function ApplicationForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -21,7 +23,7 @@ export default function ApplicationForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // fill email from logged-in user if available
+  // prefill email from logged-in user if available
   useEffect(() => {
     try {
       const u = localStorage.getItem("user");
@@ -32,11 +34,11 @@ export default function ApplicationForm() {
     } catch {}
   }, []);
 
-  // If the Google Form confirmation link returns with ?submitted=1
+  // handle returning from Google Form with ?submitted=1
   useEffect(() => {
     const qp = new URLSearchParams(window.location.search);
     if (qp.get("submitted") === "1") {
-      // logout the user and clear awaiting flag
+      // logout & clear awaiting flag
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("awaiting_submission");
@@ -54,7 +56,7 @@ export default function ApplicationForm() {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // Google Form base (use your actual prefill base)
+  // Google Form base & entry IDs (use your actual form & entry ids)
   const GOOGLE_FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSciNNPc24HpQRVrS7ZsNEn6riJm5LFoVUc5Idz3rFH5DBhBKw/viewform";
   const ENTRY = {
     fullName: "entry.114660488",
@@ -64,7 +66,7 @@ export default function ApplicationForm() {
     cgpa: "entry.1878924051",
     skills: "entry.1938146617",
     domain: "entry.1974268023",
-    github: "entry.000000000" // replace if you have an entry id for github
+    github: "entry.000000000" // replace with real entry id if exists
   };
 
   const handleSubmit = (e) => {
@@ -72,9 +74,9 @@ export default function ApplicationForm() {
     setError("");
     setLoading(true);
 
-    // basic validation
+    // basic required validation
     if (!form.fullName || !form.email || !form.domain) {
-      setError("Please fill required fields.");
+      setError("Please fill the required fields.");
       setLoading(false);
       return;
     }
@@ -92,13 +94,13 @@ export default function ApplicationForm() {
 
     const finalURL = `${GOOGLE_FORM_BASE}?${params.toString()}`;
 
-    // mark awaiting submission so we know user opened the Google Form from our flow
+    // mark awaiting submission so you can track workflow if needed
     localStorage.setItem("awaiting_submission", "1");
 
-    // Open Google Form in new tab
+    // open Google Form (user completes upload there)
     window.open(finalURL, "_blank");
 
-    setInfo("Google Form opened in a new tab. After submitting, please click the 'Return to Jenizo' link or visit Jenizo to complete (you will be logged out automatically).");
+    setInfo("Google Form opened in a new tab. After submitting, please click the return link or visit Jenizo (you will be logged out automatically).");
     setLoading(false);
   };
 
