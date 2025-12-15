@@ -57,7 +57,9 @@ const limiter = rateLimit({
   legacyHeaders: false,
   handler: (req, res) => res.status(429).json({ error: "Too many requests, please try again later." }),
 });
-app.use("/api/", limiter);
+app.use("/api/contact", limiter);
+app.use("/api/inquiries", limiter);
+
 
 /* ---------- Choose & configure mail provider ---------- */
 let mailProvider = null; // "sendgrid" | "smtp" | null
