@@ -91,6 +91,13 @@ body {
 .nav-links li a:hover {
   background: rgba(0,0,0,0.06);
 }
+/* Logged-in username */
+.user-tag {
+  color: #ffffff;   /* white */
+  font-weight: 500;
+  padding: 8px 10px;
+}
+
 
 /* HAMBURGER BUTTON */
 .menu-toggle {
