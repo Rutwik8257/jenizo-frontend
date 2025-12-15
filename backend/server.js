@@ -87,30 +87,39 @@ if (process.env.SENDGRID_API_KEY) {
 if (!mailReady && (process.env.EMAIL_HOST || (process.env.EMAIL_USER && process.env.EMAIL_PASS))) {
   try {
     nodemailer = require("nodemailer");
+
     const opts = {
       host: process.env.EMAIL_HOST || "smtp.gmail.com",
       port: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : 587,
-      secure: (process.env.EMAIL_SECURE === "true") || false,
-      connectionTimeout: process.env.SMTP_CONN_TIMEOUT ? Number(process.env.SMTP_CONN_TIMEOUT) : 15000,
+      secure: process.env.EMAIL_SECURE === "true",
+      connectionTimeout: process.env.SMTP_CONN_TIMEOUT
+        ? Number(process.env.SMTP_CONN_TIMEOUT)
+        : 15000,
     };
+
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      opts.auth = { user: process.env.EMAIL_USER.trim(), pass: process.env.EMAIL_PASS.trim() };
+      opts.auth = {
+        user: process.env.EMAIL_USER.trim(),
+        pass: process.env.EMAIL_PASS.trim(),
+      };
     }
+
     smtpTransporter = nodemailer.createTransport(opts);
+
+    // 🔥 NON-blocking verify
     smtpTransporter.verify()
-      .then(() => {
-        mailProvider = "smtp";
-        mailReady = true;
-        console.log("SMTP transporter verified and ready.");
-      })
-      .catch(err => {
-        console.warn("SMTP transporter verify failed:", err && err.message ? err.message : err);
-        mailReady = false;
-      });
+      .then(() => console.log("SMTP ready"))
+      .catch(err => console.warn("SMTP verify warning:", err?.message || err));
+
+    // ✅ Mark SMTP usable immediately
+    mailProvider = "smtp";
+    mailReady = true;
+
   } catch (e) {
-    console.warn("Failed to set up nodemailer:", e && e.message ? e.message : e);
+    console.warn("Failed to set up nodemailer:", e?.message || e);
   }
 }
+
 
 console.log("Mail provider:", mailProvider || "none", "mailReady:", mailReady);
 
