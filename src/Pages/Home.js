@@ -15,95 +15,95 @@ export default function Home() {
 
       {/* TRUST INDICATORS SECTION */}
      {/* LEADERSHIP SECTION (Replacing Trust Indicators) */}
-<section className="trust">
-  <h2>Our Leadership</h2>
+// <section className="trust">
+//   <h2>Our Leadership</h2>
 
-  <div className="trust-box-container">
+//   <div className="trust-box-container">
 
-    {/* Founder */}
-    <div className="trust-box">
-      <img 
-        src="images/elisharaju.jpeg"
-        alt="Founder"
-        className="leader-img"
-      />
-      <h3>P. Elisharaju</h3>
-      <p className="role">Founder</p>
-      <p>Visionary leader driving innovation and digital transformation.</p>
-    </div>
+//     {/* Founder */}
+//     <div className="trust-box">
+//       <img 
+//         src="images/elisharaju.jpeg"
+//         alt="Founder"
+//         className="leader-img"
+//       />
+//       <h3>P. Elisharaju</h3>
+//       <p className="role">Founder</p>
+//       <p>Visionary leader driving innovation and digital transformation.</p>
+//     </div>
 
-    {/* CEO */}
-    <div className="trust-box">
-      <img 
-        src="images/vinpaul.jpeg"
-        alt="CEO"
-        className="leader-img"
-      />
-      <h3>PIDIKELA VINPAUL</h3>
-      <p className="role">CEO</p>
-      <p>Leading Jenizo with strategy, clarity, and a strong technology vision.</p>
-    </div>
+//     {/* CEO */}
+//     <div className="trust-box">
+//       <img 
+//         src="images/vinpaul.jpeg"
+//         alt="CEO"
+//         className="leader-img"
+//       />
+//       <h3>PIDIKELA VINPAUL</h3>
+//       <p className="role">CEO</p>
+//       <p>Leading Jenizo with strategy, clarity, and a strong technology vision.</p>
+//     </div>
 
-    {/* HR */}
-    <div className="trust-box">
-      <img 
-        src="images/bharath.jpeg" 
-        alt="HR"
-        className="leader-img"
-      />
-      <h3>GUGULOTH BHARATH</h3>
-      <p className="role">Operations Lead</p>
-      <p>Ensuring employee growth, culture, and smooth operations.</p>
-    </div>
+//     {/* HR */}
+//     <div className="trust-box">
+//       <img 
+//         src="images/bharath.jpeg" 
+//         alt="HR"
+//         className="leader-img"
+//       />
+//       <h3>GUGULOTH BHARATH</h3>
+//       <p className="role">Operations Lead</p>
+//       <p>Ensuring employee growth, culture, and smooth operations.</p>
+//     </div>
 
-  </div>
-</section>
+//   </div>
+// </section>
 
 
-        <section className="team-section">
-        <h2 className="section-title">Leadership & Team</h2>
+//         <section className="team-section">
+//         <h2 className="section-title">Leadership & Team</h2>
 
-        <div className="team-grid">
+//         <div className="team-grid">
           
-          {/* EMPLOYEE 1 - VARDHAN */}
-          <div className="team-card reverse">
-            <div className="team-left">
-              <h3 className="member-name">Vardhan – Design</h3>
-              <p className="member-desc">
-                Creative UI/UX designer transforming ideas into visually
-                stunning, user-friendly digital experiences.
-              </p>
-            </div>
+//           {/* EMPLOYEE 1 - VARDHAN */}
+//           <div className="team-card reverse">
+//             <div className="team-left">
+//               <h3 className="member-name">Vardhan – Design</h3>
+//               <p className="member-desc">
+//                 Creative UI/UX designer transforming ideas into visually
+//                 stunning, user-friendly digital experiences.
+//               </p>
+//             </div>
 
-            <div className="team-right">
-              <img
-                src="images/vardhan.jpeg"
-                alt="Designer Vardhan"
-                className="team-img"
-              />
-            </div>
-          </div>
-<div className="team-card">
-  <div className="team-left">
-    <h3 className="member-name">R. Sruthi – Design</h3>
-    <p className="member-desc">
-      Passionate designer focused on crafting clean, modern, and
-      user-centered visual experiences for web and mobile.
-    </p>
-  </div>
+//             <div className="team-right">
+//               <img
+//                 src="images/vardhan.jpeg"
+//                 alt="Designer Vardhan"
+//                 className="team-img"
+//               />
+//             </div>
+//           </div>
+// <div className="team-card">
+//   <div className="team-left">
+//     <h3 className="member-name">R. Sruthi – Design</h3>
+//     <p className="member-desc">
+//       Passionate designer focused on crafting clean, modern, and
+//       user-centered visual experiences for web and mobile.
+//     </p>
+//   </div>
 
-  <div className="team-right">
-    <img
-      src="images/shruthi.jpeg"
-      alt="Designer Sruthi"
-      className="team-img"
-    />
-  </div>
-</div>
+//   <div className="team-right">
+//     <img
+//       src="images/shruthi.jpeg"
+//       alt="Designer Sruthi"
+//       className="team-img"
+//     />
+//   </div>
+// </div>
 
 
-        </div>
-      </section>
+//         </div>
+//       </section>
 
 
       {/* FEATURES SECTION */}
